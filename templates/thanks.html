@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ส่งแบบสอบถามเรียบร้อย | PTT NGD</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="brand">
+  <div class="logo">PTT NGD — บริษัท ปตท. จำหน่ายก๊าซธรรมชาติ จำกัด</div>
+  <h1>ขอบคุณสำหรับข้อมูลของท่าน</h1>
+  <div class="sub">Thank you — your questionnaire has been submitted.</div>
+</header>
+<div class="wrap" style="text-align:center">
+  <section class="card"><div class="card-body">
+    <p style="font-size:17px">บริษัทฯ ได้รับแบบสอบถามความต้องการใช้พลังงานของท่านเรียบร้อยแล้ว
+    {% if ref %}<br>หมายเลขอ้างอิง / Reference No. <strong>#{{ '%04d' % ref|int }}</strong>{% endif %}</p>
+    <p>เจ้าหน้าที่จะติดต่อกลับโดยเร็วที่สุด / Our staff will contact you shortly.</p>
+    <a class="btn teal" href="{{ url_for('survey') }}">กรอกแบบสอบถามใหม่อีกครั้ง</a>
+  </div></section>
+</div>
+</body>
+</html>

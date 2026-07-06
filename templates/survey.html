@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>แบบสอบถามความต้องการใช้พลังงานของโรงงาน | PTT NGD</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% macro tin(name, ph='', cls='') -%}
+<input type="text" name="{{ name }}" value="{{ data.get(name,'') }}" placeholder="{{ ph }}" class="{{ cls }}">
+{%- endmacro %}
+{% macro rad(name, val) -%}
+<input type="radio" name="{{ name }}" value="{{ val }}" {% if data.get(name)==val %}checked{% endif %}>
+{%- endmacro %}
+{% macro chk(name, val) -%}
+<input type="checkbox" name="{{ name }}" value="{{ val }}" {% if val in (data.get(name) or []) %}checked{% endif %}>
+{%- endmacro %}
+{% macro bchk(name) -%}
+<input type="checkbox" name="{{ name }}" value="1" {% if data.get(name) %}checked{% endif %}>
+{%- endmacro %}
+
+<header class="brand">
+  <div class="logo">PTT NGD — บริษัท ปตท. จำหน่ายก๊าซธรรมชาติ จำกัด</div>
+  <h1>แบบสอบถามความต้องการใช้พลังงานของโรงงาน</h1>
+  <div class="sub">Factories&rsquo; Energy Consumption Questionnaire</div>
+  <div class="formno">SL-FO-014-09</div>
+</header>
+
+<div class="wrap">
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+{% endwith %}
+
+<form method="post" autocomplete="off">
+
+<!-- ============================================================ Part 1 -->
+<section class="card">
+  <h2>1. ข้อมูลทั่วไป / General Information <small>(ส่วนที่ Part 1/3)</small></h2>
+  <div class="card-body">
+    <div class="choices" style="margin-bottom:12px">
+      <span class="lbl" style="color:#33475b">ช่องทาง:</span>
+      <label>{{ rad('inquiry_method','inquire') }} สอบถาม / Inquire</label>
+      <label>{{ rad('inquiry_method','fax') }} ทางโทรสาร / Fax</label>
+      <label>{{ rad('inquiry_method','email') }} ทางอีเมล์ / By E-mail</label>
+      <label>{{ rad('inquiry_method','other') }} อื่นๆ / Other</label>
+      {{ tin('inquiry_other','ระบุ...','inline-input') }}
+    </div>
+    <div class="grid g2">
+      <label class="f"><span class="lbl">ชื่อบริษัท / Company Name *</span>{{ tin('company_name') }}</label>
+      <label class="f"><span class="lbl">ที่ตั้ง / Address</span>{{ tin('address') }}</label>
+      <label class="f"><span class="lbl">ชื่อผู้ติดต่อ / Contact Person</span>{{ tin('contact_person') }}</label>
+      <label class="f"><span class="lbl">อีเมล์ / E-mail</span>{{ tin('email') }}</label>
+      <label class="f"><span class="lbl">สัญชาติของบริษัท / Nationality</span>{{ tin('nationality') }}</label>
+      <label class="f"><span class="lbl">ประเภทธุรกิจ / Business Type</span>{{ tin('business_type') }}</label>
+    </div>
+    <div class="grid g3" style="margin-top:10px">
+      <label class="f"><span class="lbl">มือถือ / Mobile Phone</span>{{ tin('mobile') }}</label>
+      <label class="f"><span class="lbl">โทรศัพท์ / Tel.</span>{{ tin('tel') }}</label>
+      <label class="f"><span class="lbl">โทรสาร / Fax.</span>{{ tin('fax') }}</label>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ Part 2 fuels -->
+<section class="card">
+  <h2>2. ปริมาณการใช้เชื้อเพลิงในการผลิต</h2>
+  <div class="card-body">
+    <h3 class="sub-head">2.1 ปริมาณการใช้เชื้อเพลิงเดิมต่อเดือนย้อนหลัง 12 เดือนล่าสุด หรือความต้องการใช้เชื้อเพลิงที่คาดว่าจะใช้สำหรับ 12 เดือน</h3>
+    <p class="hint">/ Monthly existing fuel consumption of last 12 months or Expected fuel consumption for 12 months in each fuel. <em>(For example; Jan-09)</em><br>
+    (ในกรณีมีเชื้อเพลิงมากกว่า 1 ชนิด สามารถระบุในเชื้อเพลิงที่ 2, 3 ตามลำดับ / If fuel type is more than 1 type, please specify in Fuel type 2, 3.)</p>
+
+    <div class="fuel-cols">
+      {% for n in [1,2,3] %}
+      <div class="fuel-box">
+        <h4>เชื้อเพลิงชนิดที่ {{ n }} / Fuel Type {{ n }}</h4>
+        <div class="opt"><label>{{ rad('fuel'~n~'_type','fuel_oil') }} น้ำมันเตา / Fuel Oil</label></div>
+        <div class="opt indent">เกรด / Grade:
+          <label>{{ rad('fuel'~n~'_grade','A') }} A</label>
+          <label>{{ rad('fuel'~n~'_grade','C') }} C</label>
+        </div>
+        <div class="opt"><label>{{ rad('fuel'~n~'_type','lpg') }} ก๊าซหุงต้ม / LPG</label></div>
+        <div class="opt"><label>{{ rad('fuel'~n~'_type','diesel') }} ดีเซล / Diesel</label></div>
+        <div class="opt"><label>{{ rad('fuel'~n~'_type','natural_gas') }} ก๊าซธรรมชาติ / Natural Gas</label></div>
+        <div class="opt"><label>{{ rad('fuel'~n~'_type','other') }} อื่น ๆ / Other</label> {{ tin('fuel'~n~'_type_other','ระบุ...','inline-input') }}</div>
+        <hr>
+        <strong style="font-size:13px;color:var(--blue-dark)">หน่วยปริมาณ / Consumption unit</strong>
+        <div class="opt"><label>{{ rad('fuel'~n~'_unit','liter') }} ลิตร / Liter</label></div>
+        <div class="opt"><label>{{ rad('fuel'~n~'_unit','kg') }} กิโลกรัม / kilogram</label></div>
+        <div class="opt"><label>{{ rad('fuel'~n~'_unit','mmbtu') }} ล้านบีทียู / MMBtu</label></div>
+        <div class="opt"><label>{{ rad('fuel'~n~'_unit','other') }} อื่น ๆ / Other</label> {{ tin('fuel'~n~'_unit_other','ระบุ...','inline-input') }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="scroll-x" style="margin-top:14px">
+      <table class="sheet">
+        <thead>
+          <tr>
+            <th rowspan="2" style="min-width:90px">เดือน-ปี /<br>Month-Yr</th>
+            <th colspan="2">เชื้อเพลิงชนิดที่ 1 / Fuel Type 1</th>
+            <th colspan="2">เชื้อเพลิงชนิดที่ 2 / Fuel Type 2</th>
+            <th colspan="2">เชื้อเพลิงชนิดที่ 3 / Fuel Type 3</th>
+          </tr>
+          <tr>
+            <th style="min-width:110px">ปริมาณ / Consumption</th>
+            <th style="min-width:95px">ราคา / Price<br><span style="font-weight:400">(บาทต่อหน่วย / Baht per unit)</span></th>
+            <th style="min-width:110px">ปริมาณ / Consumption</th>
+            <th style="min-width:95px">ราคา / Price<br><span style="font-weight:400">(บาทต่อหน่วย / Baht per unit)</span></th>
+            <th style="min-width:110px">ปริมาณ / Consumption</th>
+            <th style="min-width:95px">ราคา / Price<br><span style="font-weight:400">(บาทต่อหน่วย / Baht per unit)</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in range(1,13) %}
+          <tr>
+            <td>{{ tin('month_label_'~r, 'เช่น Jan-25') }}</td>
+            {% for n in [1,2,3] %}
+            <td>{{ tin('fuel'~n~'_cons_'~r) }}</td>
+            <td>{{ tin('fuel'~n~'_price_'~r) }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub-head">2.2 แนวโน้มปริมาณการใช้ก๊าซธรรมชาติต่อปีในอนาคต / Yearly expected your Natural gas consumption in the future <em>(For example; Year 2010)</em></h3>
+    <div class="scroll-x">
+      <table class="sheet">
+        <thead>
+          <tr>
+            <th style="min-width:150px">Expected</th>
+            {% for y in range(1,8) %}<th style="min-width:95px">ปีที่ {{ y }} / {{ y }}{{ ['st','nd','rd','th','th','th','th'][y-1] }} Year</th>{% endfor %}
+          </tr>
+          <tr>
+            <th>(Year)</th>
+            {% for y in range(1,8) %}<td>{{ tin('year_'~y, 'เช่น 2027') }}</td>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>Consumption (MMBtu/yr)</th>
+            {% for y in range(1,8) %}<td>{{ tin('cons_year_'~y) }}</td>{% endfor %}
+          </tr>
+          <tr>
+            <th>Capacity (Sm3/hr)</th>
+            {% for y in range(1,8) %}<td>{{ tin('cap_year_'~y) }}</td>{% endfor %}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ Part 3 -->
+<section class="card">
+  <h2>3. ความต้องการใช้พลังงาน / Energy Usage <small>(ส่วนที่ Part 2/3)</small></h2>
+  <div class="card-body">
+    <h3 class="sub-head">3.1 โครงการและแผนงาน / Project and Plan</h3>
+    <div class="scroll-x">
+      <table class="sheet">
+        <thead>
+          <tr>
+            <th style="text-align:left;min-width:230px"></th>
+            <th style="min-width:170px">โครงการปัจจุบัน /<br>Current Project</th>
+            <th style="min-width:170px">โครงการกำลังก่อสร้าง – แผนงาน /<br>Expansion Plan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th style="text-align:left">ประเภทสินค้าที่ผลิต / Product</th>
+            <td>{{ tin('product_current') }}</td><td>{{ tin('product_expansion') }}</td></tr>
+          <tr><th style="text-align:left">วัน / เดือน / ปี ที่เริ่มผลิต (Start-up: Date / Month / Year)</th>
+            <td>{{ tin('startup_current') }}</td><td>{{ tin('startup_expansion') }}</td></tr>
+          <tr><th style="text-align:left">ระยะเวลาปฏิบัติงาน / Operating cycle (ชั่วโมงต่อวัน / hour per day)</th>
+            <td>{{ tin('ophour_current') }}</td><td>{{ tin('ophour_expansion') }}</td></tr>
+          <tr><th style="text-align:left">(วันต่อปี / day per year)</th>
+            <td>{{ tin('opday_current') }}</td><td>{{ tin('opday_expansion') }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub-head">3.2 ความต้องการใช้ก๊าซธรรมชาติ / To use Natural Gas</h3>
+    <div class="grid g2">
+      <label class="f"><span class="lbl">(1) ตำแหน่งที่ตั้งโรงงาน / Plant Location [นิคมอุตสาหกรรม, สวนอุตสาหกรรม, เขตอุตสาหกรรม / Industrial Estate]</span>{{ tin('plant_location') }}</label>
+      <label class="f"><span class="lbl">ที่ดินแปลงที่ / Land plot number</span>{{ tin('land_plot') }}</label>
+    </div>
+    <div style="margin-top:12px">
+      <span class="lbl" style="color:#33475b;font-size:13.5px">(2) วัตถุประสงค์ของการใช้เชื้อเพลิง / Using Purpose (เลือกได้มากกว่า 1 ข้อ)</span>
+      <div class="choices" style="margin-top:6px">
+        <label>{{ chk('purpose','steam') }} ผลิตไอน้ำ / Steam Production</label>
+        <span>ความดัน/Steam Pressure {{ tin('steam_pressure','','sm') }} Bar(g)</span>
+      </div>
+      <div class="choices" style="margin-top:6px">
+        <label>{{ chk('purpose','drying') }} อบแห้ง / Drying</label>
+        <label>{{ chk('purpose','melting') }} หลอม / Melting</label>
+        <label>{{ chk('purpose','other') }} อื่นๆ ระบุ / Others</label>
+        {{ tin('purpose_other','ระบุ...','inline-input') }}
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:12px">
+      <label class="f"><span class="lbl">(3) ช่วงเวลาที่ต้องการใช้ก๊าซธรรมชาติ / Natural Gas supplying date required (DD/MM/YY)</span>{{ tin('ng_supply_date','เช่น 01/01/27') }}</label>
+      <label class="f"><span class="lbl">(4) แรงดันที่ต้องการ / Natural Gas pressure supply required [For example: Standard pressure supply are 1, or 1.5 Bar (gauge)]</span>{{ tin('ng_pressure','เช่น 1.5 Bar (g)') }}</label>
+    </div>
+
+    <h3 class="sub-head">3.3 รายละเอียดเครื่องจักรที่ใช้พลังงาน / Type of Heating Machines and Heating Capacity</h3>
+    <p class="hint"><em>For example;</em> Machine type: Water Steam boiler, Air-Heat, Furnace &nbsp; Capacity: 200,000 Kcal/hr, 400,000 Btu/hr, 11 MW, 50,000 MJ, 100m3/hr<br>
+    Operating hours/day: 15 hours/day &nbsp; Working day/year: 340 days/year &nbsp; Operating Character: Low-Fire / High-Fire, On-OFF, Steady, Fluctuate &nbsp; Quantity: 2 machines</p>
+    {% for m in range(1,5) %}
+    <div class="machine-box">
+      <h4>ประเภทของเครื่องจักรที่ / No {{ m }}</h4>
+      <div class="grid g3">
+        <label class="f"><span class="lbl">ประเภทเครื่องจักร / Machine type</span>{{ tin('machine'~m~'_type') }}</label>
+        <label class="f"><span class="lbl">อัตราการใช้พลังงาน / Capacity</span>{{ tin('machine'~m~'_capacity') }}</label>
+        <label class="f"><span class="lbl">ระยะเวลาการทำงานของเครื่องจักร / Operating (hours/day)</span>{{ tin('machine'~m~'_ophour') }}</label>
+        <label class="f"><span class="lbl">Working days /year</span>{{ tin('machine'~m~'_days') }}</label>
+        <label class="f"><span class="lbl">ลักษณะการทำงาน / Operating Character</span>{{ tin('machine'~m~'_character') }}</label>
+        <label class="f"><span class="lbl">จำนวน / Quantity</span>{{ tin('machine'~m~'_qty') }}</label>
+      </div>
+    </div>
+    {% endfor %}
+    <p class="hint" style="margin-top:8px"><u>หมายเหตุ</u>: กรณีเครื่องจักรมากกว่า 4 เครื่อง กรุณาระบุรายละเอียดเพิ่มเติมโดยติดต่อเจ้าหน้าที่ / if there are more than 5 machines, please duplicate part 2/2 and can write more details.</p>
+  </div>
+</section>
+
+<!-- ============================================================ Part 4 -->
+<section class="card">
+  <h2>4. ความต้องการใช้ไฟฟ้า และ ความเย็น / Type of Heating Machines and Heating Capacity <small>(ส่วนที่ Part 3/3)</small></h2>
+  <div class="card-body">
+    <h3 class="sub-head">4.1 ปริมาณการใช้ไฟฟ้าในโรงงาน / Electricity Demand</h3>
+    <div class="choices">
+      <label>{{ bchk('elec_bill') }} แนบบิลค่าไฟฟ้า/Electricity bill (ถ้ามี)</label>
+      <label>{{ bchk('elec_profile') }} Weekly/Monthly Electricty Load Profile</label>
+    </div>
+    <div class="grid g3" style="margin-top:10px">
+      <label class="f"><span class="lbl">Base Load (Mwh)</span>{{ tin('elec_base') }}</label>
+      <label class="f"><span class="lbl">Peak (Mwh)</span>{{ tin('elec_peak') }}</label>
+      <label class="f"><span class="lbl">Off Peak (Mwh)</span>{{ tin('elec_offpeak') }}</label>
+    </div>
+    <div style="margin-top:12px">
+      <span class="lbl" style="color:#33475b;font-size:13.5px">ปัจจุบันซื้อไฟฟ้าจาก / Electricity Source</span>
+      <div class="choices" style="margin-top:6px">
+        <label>{{ chk('elec_source','pea') }} PEA</label>
+        <span>ระดับแรงดัน {{ tin('pea_kv','','sm') }} kV</span>
+      </div>
+      <div class="choices" style="margin-top:6px">
+        <label>{{ chk('elec_source','mea') }} MEA</label>
+        <span>ระดับแรงดัน {{ tin('mea_kv','','sm') }} kV</span>
+      </div>
+      <div class="choices" style="margin-top:6px">
+        <label>{{ chk('elec_source','spp') }} SPP ในนิคมอุตสาหกรรม</label>
+      </div>
+      <div class="choices" style="margin-top:6px">
+        <label>{{ chk('elec_source','self') }} ผลิตได้เอง</label>
+        <span>ปริมาณที่ผลิตได้เอง {{ tin('self_mw','','sm') }} MW,</span>
+        <span>วิธีที่ใช้ผลิต (Example Solar Rooftop, etc) {{ tin('self_method','','inline-input') }}</span>
+      </div>
+      <div class="choices" style="margin-top:6px">
+        <label>{{ chk('elec_source','other') }} อื่นๆ (โปรดระบุ)</label>
+        {{ tin('elec_source_other','','inline-input') }}
+      </div>
+    </div>
+
+    <h3 class="sub-head">4.2 ปริมาณการใช้ความเย็น / Chiller demand</h3>
+    <div class="choices">
+      <label>{{ bchk('chiller_profile') }} Weekly/Monthly Load Profile</label>
+    </div>
+    <div class="grid g2" style="margin-top:10px">
+      <label class="f"><span class="lbl">Average (RT/hr)</span>{{ tin('chiller_avg') }}</label>
+      <label class="f"><span class="lbl">Base Load (RT/hr)</span>{{ tin('chiller_base') }}</label>
+    </div>
+    {% for c in range(1,4) %}
+    <div class="grid g3" style="margin-top:10px">
+      <label class="f"><span class="lbl">Chiller No.{{ c }} (RT/hr)</span>{{ tin('chiller'~c~'_rt') }}</label>
+      <label class="f"><span class="lbl">Type</span>{{ tin('chiller'~c~'_type') }}</label>
+      <label class="f"><span class="lbl">COP</span>{{ tin('chiller'~c~'_cop') }}</label>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="submit-bar">
+  <button class="btn" type="submit">ส่งแบบสอบถาม / Submit</button>
+</div>
+
+<p class="pdpa">&ldquo;บริษัทฯ จะเก็บรวบรวม ใช้ หรือเปิดเผยข้อมูลของท่านเพื่อการประสานงานที่เกี่ยวข้องกับการดำเนินธุรกิจของบริษัท และ/หรือเพื่อดำเนินการเรื่องการอนุมัติคำขอซื้อสินค้าและหรือใช้บริการ และ/หรือเพื่อดำเนินการตามกระบวนการภายในต่าง ๆ ของบริษัทเท่านั้น โดยท่านสามารถศึกษารายละเอียดเพิ่มเติมที่เกี่ยวข้องกับการประมวลผลข้อมูลส่วนบุคคลและการคุ้มครองข้อมูลส่วนบุคคลของบริษัทได้ที่ &ldquo;แบบแจ้งเกี่ยวกับข้อมูลส่วนบุคคล (Privacy Notice)&rdquo; ในเว็บไซต์ของบริษัท www.pttngd.co.th&rdquo;</p>
+
+</form>
+</div>
+</body>
+</html>

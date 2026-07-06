@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>รายการแบบสอบถาม | ระบบหลังบ้าน</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="brand">
+  <div class="logo">PTT NGD — ระบบหลังบ้าน</div>
+  <h1>รายการแบบสอบถามที่ลูกค้าส่งเข้ามา</h1>
+  <div class="sub">SL-FO-014-09 แบบสอบถามความต้องการใช้พลังงานของโรงงาน</div>
+</header>
+<div class="wrap">
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+{% endwith %}
+  <div class="topbar" style="margin-top:16px">
+    <form method="get" style="display:flex;gap:8px">
+      <input type="text" name="q" value="{{ q }}" placeholder="ค้นหา บริษัท / ผู้ติดต่อ / อีเมล" style="width:280px">
+      <button class="btn small" type="submit">ค้นหา</button>
+      {% if q %}<a class="btn small gray" href="{{ url_for('admin_list') }}">ล้าง</a>{% endif %}
+    </form>
+    <div>
+      <a class="btn small teal" href="{{ url_for('survey') }}" target="_blank">เปิดหน้าแบบสอบถาม</a>
+      <a class="btn small gray" href="{{ url_for('admin_logout') }}">ออกจากระบบ</a>
+    </div>
+  </div>
+
+  <section class="card" style="margin-top:14px">
+    <table class="list">
+      <thead>
+        <tr><th>#</th><th>วันที่ส่ง</th><th>บริษัท</th><th>ผู้ติดต่อ</th><th>อีเมล</th><th style="width:230px">การจัดการ</th></tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ '%04d' % r['id'] }}</td>
+          <td>{{ r['created_at'] }}</td>
+          <td><a href="{{ url_for('admin_view', sid=r['id']) }}">{{ r['company_name'] or '-' }}</a></td>
+          <td>{{ r['contact_person'] or '-' }}</td>
+          <td>{{ r['email'] or '-' }}</td>
+          <td>
+            <a class="btn small" href="{{ url_for('admin_view', sid=r['id']) }}">ดูข้อมูล</a>
+            <a class="btn small teal" href="{{ url_for('admin_pdf', sid=r['id'], download=1) }}">ดาวน์โหลด PDF</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;padding:28px;color:#777">ยังไม่มีแบบสอบถามส่งเข้ามา</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+</body>
+</html>

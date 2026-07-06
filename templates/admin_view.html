@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>แบบสอบถาม #{{ '%04d' % row['id'] }} — {{ row['company_name'] }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% macro v(key) -%}{{ d.get(key) or '-' }}{%- endmacro %}
+<header class="brand">
+  <div class="logo">PTT NGD — ระบบหลังบ้าน</div>
+  <h1>แบบสอบถาม #{{ '%04d' % row['id'] }}</h1>
+  <div class="sub">{{ row['company_name'] }} — ส่งเมื่อ {{ row['created_at'] }}</div>
+</header>
+<div class="wrap">
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+{% endwith %}
+
+  <div class="topbar" style="margin-top:16px">
+    <a class="btn small gray" href="{{ url_for('admin_list') }}">&larr; กลับหน้ารายการ</a>
+    <div>
+      <a class="btn small" href="{{ url_for('admin_pdf', sid=row['id']) }}" target="_blank">พรีวิว PDF</a>
+      <a class="btn small teal" href="{{ url_for('admin_pdf', sid=row['id'], download=1) }}">ดาวน์โหลด PDF</a>
+      <form method="post" action="{{ url_for('admin_delete', sid=row['id']) }}" style="display:inline"
+            onsubmit="return confirm('ยืนยันการลบแบบสอบถาม #{{ row['id'] }} ?')">
+        <button class="btn small red" type="submit">ลบ</button>
+      </form>
+    </div>
+  </div>
+
+  <section class="card">
+    <h2>1. ข้อมูลทั่วไป / General Information</h2>
+    <div class="card-body">
+      <table class="kv">
+        <tr><th>ช่องทาง</th><td>{{ {'inquire':'สอบถาม / Inquire','fax':'ทางโทรสาร / Fax','email':'ทางอีเมล์ / By E-mail','other':'อื่นๆ: ' + (d.get('inquiry_other') or '')}.get(d.get('inquiry_method'), '-') }}</td></tr>
+        <tr><th>ชื่อบริษัท / Company Name</th><td>{{ v('company_name') }}</td></tr>
+        <tr><th>ที่ตั้ง / Address</th><td>{{ v('address') }}</td></tr>
+        <tr><th>ชื่อผู้ติดต่อ / Contact Person</th><td>{{ v('contact_person') }}</td></tr>
+        <tr><th>อีเมล์ / E-mail</th><td>{{ v('email') }}</td></tr>
+        <tr><th>สัญชาติของบริษัท / Nationality</th><td>{{ v('nationality') }}</td></tr>
+        <tr><th>ประเภทธุรกิจ / Business Type</th><td>{{ v('business_type') }}</td></tr>
+        <tr><th>มือถือ / โทรศัพท์ / โทรสาร</th><td>{{ v('mobile') }} / {{ v('tel') }} / {{ v('fax') }}</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2. ปริมาณการใช้เชื้อเพลิงในการผลิต</h2>
+    <div class="card-body">
+      {% set fuel_names = {'fuel_oil':'น้ำมันเตา / Fuel Oil','lpg':'ก๊าซหุงต้ม / LPG','diesel':'ดีเซล / Diesel','natural_gas':'ก๊าซธรรมชาติ / Natural Gas','other':'อื่น ๆ / Other'} %}
+      {% set unit_names = {'liter':'ลิตร / Liter','kg':'กิโลกรัม / kilogram','mmbtu':'ล้านบีทียู / MMBtu','other':'อื่น ๆ / Other'} %}
+      <table class="kv">
+        {% for n in [1,2,3] %}
+        <tr><th>เชื้อเพลิงชนิดที่ {{ n }}</th>
+          <td>{{ fuel_names.get(d.get('fuel'~n~'_type'), '-') }}
+            {%- if d.get('fuel'~n~'_type') == 'fuel_oil' and d.get('fuel'~n~'_grade') %} (เกรด {{ d.get('fuel'~n~'_grade') }}){% endif %}
+            {%- if d.get('fuel'~n~'_type') == 'other' %} : {{ v('fuel'~n~'_type_other') }}{% endif %}
+            — หน่วย: {{ unit_names.get(d.get('fuel'~n~'_unit'), '-') }}
+            {%- if d.get('fuel'~n~'_unit') == 'other' %} : {{ v('fuel'~n~'_unit_other') }}{% endif %}</td></tr>
+        {% endfor %}
+      </table>
+      <div class="scroll-x" style="margin-top:12px">
+        <table class="sheet">
+          <thead>
+            <tr><th>เดือน-ปี</th><th>ปริมาณ 1</th><th>ราคา 1</th><th>ปริมาณ 2</th><th>ราคา 2</th><th>ปริมาณ 3</th><th>ราคา 3</th></tr>
+          </thead>
+          <tbody>
+            {% for r in range(1,13) %}
+            {% if d.get('month_label_'~r) or d.get('fuel1_cons_'~r) or d.get('fuel2_cons_'~r) or d.get('fuel3_cons_'~r) %}
+            <tr>
+              <td>{{ v('month_label_'~r) }}</td>
+              {% for n in [1,2,3] %}<td>{{ v('fuel'~n~'_cons_'~r) }}</td><td>{{ v('fuel'~n~'_price_'~r) }}</td>{% endfor %}
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <h3 class="sub-head" style="margin-top:14px">2.2 แนวโน้มการใช้ก๊าซธรรมชาติต่อปีในอนาคต</h3>
+      <div class="scroll-x">
+        <table class="sheet">
+          <thead><tr><th></th>{% for y in range(1,8) %}<th>ปีที่ {{ y }}<br>({{ d.get('year_'~y) or '-' }})</th>{% endfor %}</tr></thead>
+          <tbody>
+            <tr><th>Consumption (MMBtu/yr)</th>{% for y in range(1,8) %}<td>{{ v('cons_year_'~y) }}</td>{% endfor %}</tr>
+            <tr><th>Capacity (Sm3/hr)</th>{% for y in range(1,8) %}<td>{{ v('cap_year_'~y) }}</td>{% endfor %}</tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>3. ความต้องการใช้พลังงาน / Energy Usage</h2>
+    <div class="card-body">
+      <table class="kv">
+        <tr><th></th><td><strong>โครงการปัจจุบัน</strong></td><td><strong>โครงการกำลังก่อสร้าง – แผนงาน</strong></td></tr>
+        <tr><th>ประเภทสินค้าที่ผลิต</th><td>{{ v('product_current') }}</td><td>{{ v('product_expansion') }}</td></tr>
+        <tr><th>วันที่เริ่มผลิต</th><td>{{ v('startup_current') }}</td><td>{{ v('startup_expansion') }}</td></tr>
+        <tr><th>ชั่วโมงต่อวัน</th><td>{{ v('ophour_current') }}</td><td>{{ v('ophour_expansion') }}</td></tr>
+        <tr><th>วันต่อปี</th><td>{{ v('opday_current') }}</td><td>{{ v('opday_expansion') }}</td></tr>
+      </table>
+      <table class="kv" style="margin-top:12px">
+        <tr><th>(1) ตำแหน่งที่ตั้งโรงงาน</th><td>{{ v('plant_location') }} — แปลงที่ {{ v('land_plot') }}</td></tr>
+        <tr><th>(2) วัตถุประสงค์</th><td>
+          {% set purposes = d.get('purpose') or [] %}
+          {% if 'steam' in purposes %}ผลิตไอน้ำ (ความดัน {{ v('steam_pressure') }} Bar(g)){% endif %}
+          {% if 'drying' in purposes %} | อบแห้ง{% endif %}
+          {% if 'melting' in purposes %} | หลอม{% endif %}
+          {% if 'other' in purposes %} | อื่นๆ: {{ v('purpose_other') }}{% endif %}
+          {% if not purposes %}-{% endif %}</td></tr>
+        <tr><th>(3) ช่วงเวลาที่ต้องการใช้ก๊าซ</th><td>{{ v('ng_supply_date') }}</td></tr>
+        <tr><th>(4) แรงดันที่ต้องการ</th><td>{{ v('ng_pressure') }}</td></tr>
+      </table>
+      <h3 class="sub-head" style="margin-top:14px">3.3 เครื่องจักรที่ใช้พลังงาน</h3>
+      <div class="scroll-x">
+        <table class="sheet">
+          <thead><tr><th>No</th><th>ประเภท</th><th>Capacity</th><th>hours/day</th><th>days/year</th><th>Character</th><th>จำนวน</th></tr></thead>
+          <tbody>
+            {% for m in range(1,5) %}
+            {% if d.get('machine'~m~'_type') %}
+            <tr><td>{{ m }}</td><td>{{ v('machine'~m~'_type') }}</td><td>{{ v('machine'~m~'_capacity') }}</td>
+              <td>{{ v('machine'~m~'_ophour') }}</td><td>{{ v('machine'~m~'_days') }}</td>
+              <td>{{ v('machine'~m~'_character') }}</td><td>{{ v('machine'~m~'_qty') }}</td></tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>4. ความต้องการใช้ไฟฟ้า และ ความเย็น</h2>
+    <div class="card-body">
+      <table class="kv">
+        <tr><th>เอกสารแนบ</th><td>
+          {% if d.get('elec_bill') %}แนบบิลค่าไฟฟ้า{% endif %}
+          {% if d.get('elec_profile') %} | Weekly/Monthly Electricity Load Profile{% endif %}
+          {% if not d.get('elec_bill') and not d.get('elec_profile') %}-{% endif %}</td></tr>
+        <tr><th>Base / Peak / Off Peak (Mwh)</th><td>{{ v('elec_base') }} / {{ v('elec_peak') }} / {{ v('elec_offpeak') }}</td></tr>
+        <tr><th>ปัจจุบันซื้อไฟฟ้าจาก</th><td>
+          {% set src = d.get('elec_source') or [] %}
+          {% if 'pea' in src %}PEA ({{ v('pea_kv') }} kV){% endif %}
+          {% if 'mea' in src %} | MEA ({{ v('mea_kv') }} kV){% endif %}
+          {% if 'spp' in src %} | SPP ในนิคมอุตสาหกรรม{% endif %}
+          {% if 'self' in src %} | ผลิตได้เอง {{ v('self_mw') }} MW ({{ v('self_method') }}){% endif %}
+          {% if 'other' in src %} | อื่นๆ: {{ v('elec_source_other') }}{% endif %}
+          {% if not src %}-{% endif %}</td></tr>
+        <tr><th>Chiller demand</th><td>
+          {% if d.get('chiller_profile') %}Weekly/Monthly Load Profile | {% endif %}
+          Average {{ v('chiller_avg') }} RT/hr, Base Load {{ v('chiller_base') }} RT/hr</td></tr>
+        {% for c in range(1,4) %}
+        {% if d.get('chiller'~c~'_rt') or d.get('chiller'~c~'_type') %}
+        <tr><th>Chiller No.{{ c }}</th><td>{{ v('chiller'~c~'_rt') }} RT/hr, Type: {{ v('chiller'~c~'_type') }}, COP: {{ v('chiller'~c~'_cop') }}</td></tr>
+        {% endif %}
+        {% endfor %}
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>เฉพาะเจ้าหน้าที่ (จะถูกพิมพ์ลงใน PDF ด้วย)</h2>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('admin_staff', sid=row['id']) }}">
+        <div class="choices">
+          <label><input type="radio" name="staff_factory" value="existing" {% if d.get('staff_factory')=='existing' %}checked{% endif %}> Existing Factory</label>
+          <label><input type="radio" name="staff_factory" value="new" {% if d.get('staff_factory')=='new' %}checked{% endif %}> New Factory</label>
+        </div>
+        <div class="grid g2" style="margin-top:10px">
+          <label class="f"><span class="lbl">วันที่ (ได้รับข้อมูล)</span>
+            <input type="text" name="staff_received_date" value="{{ d.get('staff_received_date','') }}"></label>
+          <label class="f"><span class="lbl">วันที่ (บันทึกข้อมูล)</span>
+            <input type="text" name="staff_recorded_date" value="{{ d.get('staff_recorded_date','') }}"></label>
+          <label class="f"><span class="lbl">Revision No.</span>
+            <input type="text" name="staff_revision" value="{{ d.get('staff_revision','') }}"></label>
+          <label class="f"><span class="lbl">ผู้บันทึกข้อมูล</span>
+            <input type="text" name="staff_recorder" value="{{ d.get('staff_recorder','') }}"></label>
+        </div>
+        <div style="margin-top:12px"><button class="btn small" type="submit">บันทึกส่วนเจ้าหน้าที่</button></div>
+      </form>
+    </div>
+  </section>
+</div>
+</body>
+</html>
