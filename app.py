@@ -16,6 +16,7 @@ from flask import (Flask, g, redirect, render_template, request, send_file,
 import io
 
 from pdf_filler import fill_pdf
+from translations import LANGS, make_t
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -165,6 +166,25 @@ def collect_form(form):
     data["form_date"] = datetime.now().strftime("%d/%m/%Y")
     return data
 
+# ---------------------------------------------------------------- language
+
+@app.before_request
+def pick_language():
+    lang = request.args.get("lang")
+    if lang in LANGS:
+        session["lang"] = lang
+
+
+@app.context_processor
+def inject_translator():
+    lang = session.get("lang", "th")
+    return {"t": make_t(lang), "lang": lang}
+
+
+def tr(key):
+    return make_t(session.get("lang", "th"))(key)
+
+
 # ---------------------------------------------------------------- customer
 
 @app.route("/")
@@ -177,10 +197,10 @@ def survey():
     if request.method == "POST":
         data = collect_form(request.form)
         if not data["company_name"]:
-            flash("กรุณากรอกชื่อบริษัท / Please enter your company name")
+            flash(tr("flash_company"))
             return render_template("survey.html", data=data), 400
         if not data["pdpa_accept"]:
-            flash("กรุณากดยอมรับนโยบาย Compliance & Sanctions ก่อนส่งแบบสอบถาม")
+            flash(tr("flash_consent"))
             return render_template("survey.html", data=data), 400
         new_id = db_execute(
             "INSERT INTO submissions (created_at, company_name, contact_person, email, data)"
