@@ -17,6 +17,7 @@ ORIGINAL_PDF = os.path.join(BASE_DIR, "original_form.pdf")
 
 PAGE_W, PAGE_H = 595.32, 841.92
 FONT = "ThaiFont"
+FONT_BOLD = "ThaiFontBold"
 INK = (0.05, 0.15, 0.55)  # pen-blue answers, clearly distinct from the form
 
 
@@ -30,8 +31,11 @@ def _register_font():
     ):
         if os.path.exists(path):
             pdfmetrics.registerFont(TTFont(FONT, path))
-            return
-    raise RuntimeError("No Thai-capable font found")
+            break
+    else:
+        raise RuntimeError("No Thai-capable font found")
+    bold = os.path.join(BASE_DIR, "fonts", "Sarabun-Bold.ttf")
+    pdfmetrics.registerFont(TTFont(FONT_BOLD, bold if os.path.exists(bold) else path))
 
 
 _register_font()
@@ -249,6 +253,106 @@ def _page3(o, d):
     o.text(462, 661.7, _g(d, "form_date"), size=9, max_w=100)
 
 
+def _consent_page(c, d):
+    """Draw Part 4/4 'Compliance & Sanctions' policy page (per SL-FO-014-10)
+    and fill the customer's consent."""
+    H = PAGE_H
+    black = (0.1, 0.1, 0.1)
+    L, R = 45, 550          # box borders
+    TXT_L = 60              # body text
+    B1 = 78                 # bullet level indent
+    B2 = 96                 # sub text indent
+    B3 = 110                # dash list indent
+
+    def line_y(top):
+        return H - top
+
+    def text(x, top, s, size=11, bold=False, color=black):
+        c.setFont(FONT_BOLD if bold else FONT, size)
+        c.setFillColorRGB(*color)
+        c.drawString(x, H - top, s)
+
+    # header
+    c.setFont(FONT, 11)
+    c.setFillColorRGB(*black)
+    c.drawRightString(R, H - 55, "ส่วนที่ Part 4/4")
+
+    # outer box + title bar
+    c.setStrokeColorRGB(*black)
+    c.setLineWidth(0.8)
+    c.rect(L, H - 700, R - L, 700 - 72)          # main box (top 72 .. bottom 700)
+    c.line(L, H - 95, R, H - 95)                 # title separator
+    text(TXT_L - 5, 89, "5. นโยบาย Compliance & Sanctions ของบริษัทฯ", 12, bold=True)
+
+    y = 118
+    def para(s, x=TXT_L, size=11, bold=False, gap=16):
+        nonlocal y
+        text(x, y, s, size, bold)
+        y += gap
+
+    para("บริษัท ปตท. จำหน่ายก๊าซธรรมชาติ จำกัด (“บริษัทฯ”) ขอแจ้งให้ท่านทราบว่า บริษัทฯ")
+    para("ดำเนินธุรกิจภายใต้กรอบกฎหมายและมาตรฐานสากลด้าน Compliance อย่างเคร่งครัด รายละเอียดดังนี้", gap=20)
+
+    para("• มาตรการคว่ำบาตรระหว่างประเทศ (International Sanctions)", x=B1, bold=True, gap=17)
+    para("บริษัทฯ ปฏิบัติตามมาตรการคว่ำบาตรระหว่างประเทศอย่างเคร่งครัด และไม่ดำเนินธุรกิจกับบุคคล", x=B2)
+    para("นิติบุคคล หรือประเทศที่อยู่ภายใต้มาตรการของ:", x=B2)
+    para("-  United Nations (UN)", x=B3)
+    para("-  United States OFAC", x=B3)
+    para("-  European Union (EU)", x=B3)
+    para("-  United Kingdom (UK)", x=B3, gap=20)
+
+    para("• การป้องกันการฟอกเงินและการสนับสนุนทางการเงินแก่การก่อการร้าย (AML/CFT)", x=B1, bold=True, gap=17)
+    para("บริษัทฯ มีนโยบายไม่รับ ไม่สนับสนุน และไม่มีส่วนเกี่ยวข้องกับ:", x=B2)
+    para("-  การฟอกเงิน (Money Laundering)", x=B3)
+    para("-  การสนับสนุนทางการเงินแก่การก่อการร้าย (Terrorism Financing)", x=B3)
+    para("-  ธุรกรรมหรือกิจกรรมทางการค้าที่ผิดกฎหมาย", x=B3, gap=20)
+
+    para("• การตรวจสอบข้อมูลลูกค้า (KYC / Sanctions Screening)", x=B1, bold=True, gap=17)
+    para("เพื่อให้เป็นไปตามกฎหมายและมาตรฐานสากล บริษัทฯ ขอสงวนสิทธิ์ในการดำเนินการตรวจสอบ KYC,", x=B2)
+    para("Compliance และ Sanctions Screening สำหรับลูกค้าทุกรายตามความเหมาะสม", x=B2, gap=20)
+
+    para("• การแจ้งเปลี่ยนแปลงข้อมูล", x=B1, bold=True, gap=17)
+    para("หากมีการเปลี่ยนแปลงข้อมูลที่มีนัยสำคัญ บริษัทฯ ขอความร่วมมือให้ท่านแจ้งให้ทราบโดยเร็ว ได้แก่:", x=B2)
+    para("-  โครงสร้างผู้ถือหุ้น", x=B3)
+    para("-  ผู้มีอำนาจลงนาม", x=B3)
+    para("-  สถานะทางกฎหมาย", x=B3)
+    para("-  สถานะด้านมาตรการคว่ำบาตร", x=B3, gap=20)
+
+    para("• สิทธิ์ของบริษัทฯ", x=B1, bold=True, gap=17)
+    para("บริษัทฯ ขอสงวนสิทธิ์ในการระงับการดำเนินการหรือการให้บริการ หากตรวจพบประเด็นที่เกี่ยวข้องกับ", x=B2)
+    para("Compliance หรือ Sanctions โดยไม่ถือเป็นการผิดสัญญา", x=B2)
+
+    # consent box
+    cb_top, cb_bot = 715, 760
+    c.rect(L, H - cb_bot, R - L, cb_bot - cb_top)
+    c.rect(TXT_L - 4, H - 742, 12, 12)           # checkbox square (top 730..742)
+    text(TXT_L + 16, 733, "ข้าพเจ้าในนามของบริษัทได้รับทราบและเข้าใจนโยบาย Compliance & Sanctions ของบริษัท ปตท.")
+    text(TXT_L + 16, 750, "จำหน่ายก๊าซธรรมชาติ จำกัด และยินยอมให้บริษัทฯ ดำเนินการตามที่ระบุข้างต้นทุกประการ")
+
+    # signature box
+    sg_top, sg_bot = 770, 822
+    c.rect(L, H - sg_bot, R - L, sg_bot - sg_top)
+    text(TXT_L - 5, 790, "ลงนาม / Authorized Signature: ..........................................")
+    text(330, 790, "ตำแหน่ง / Title: ......................................")
+    text(TXT_L - 5, 812, "ชื่อ / Name: ...............................................................")
+    text(330, 812, "วันที่ / Date: ........................................")
+
+    # form code (per revision 10)
+    c.setFont(FONT, 10)
+    c.drawRightString(R, H - 838, "SL-FO-014-10")
+
+    # ---- fill the answers (blue ink) ----
+    o = Overlay(c)
+    if d.get("pdpa_accept"):
+        o.check(TXT_L + 2, 741.5, True, lift=2.0)
+        name = (d.get("pdpa_name") or d.get("contact_person") or "").strip()
+        title = (d.get("pdpa_title") or "").strip()
+        o.text(200, 790, name, size=11, max_w=120, lift=0)     # signature line (e-consent)
+        o.text(410, 790, title, size=11, max_w=135, lift=0)
+        o.text(125, 812, name, size=11, max_w=190, lift=0)
+        o.text(400, 812, d.get("form_date", ""), size=11, max_w=145, lift=0)
+
+
 def fill_pdf(data, out_path=None):
     """Overlay `data` (dict of answers) onto the original form.
     Returns the PDF bytes; also writes to out_path when given."""
@@ -263,6 +367,8 @@ def fill_pdf(data, out_path=None):
     o = Overlay(c)
     _page3(o, data)
     c.showPage()
+    _consent_page(c, data)
+    c.showPage()
     c.save()
     buf.seek(0)
 
@@ -273,6 +379,9 @@ def fill_pdf(data, out_path=None):
         if i < len(overlay_reader.pages):
             page.merge_page(overlay_reader.pages[i])
         writer.add_page(page)
+    # extra overlay pages (e.g. the generated Compliance & Sanctions consent page)
+    for j in range(len(base_reader.pages), len(overlay_reader.pages)):
+        writer.add_page(overlay_reader.pages[j])
 
     out = io.BytesIO()
     writer.write(out)

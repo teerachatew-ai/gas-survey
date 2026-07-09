@@ -24,7 +24,6 @@
   <div class="logo">PTT NGD — บริษัท ปตท. จำหน่ายก๊าซธรรมชาติ จำกัด</div>
   <h1>แบบสอบถามความต้องการใช้พลังงานของโรงงาน</h1>
   <div class="sub">Factories&rsquo; Energy Consumption Questionnaire</div>
-  <div class="formno">SL-FO-014-09</div>
 </header>
 
 <div class="wrap">
@@ -276,6 +275,58 @@
       <label class="f"><span class="lbl">COP</span>{{ tin('chiller'~c~'_cop') }}</label>
     </div>
     {% endfor %}
+  </div>
+</section>
+
+<!-- ============================================================ Part 5 : Compliance & Sanctions -->
+<section class="card">
+  <h2>5. นโยบาย Compliance &amp; Sanctions ของบริษัทฯ</h2>
+  <div class="card-body">
+    <div class="policy-box">
+      <p>บริษัท ปตท. จำหน่ายก๊าซธรรมชาติ จำกัด (&ldquo;บริษัทฯ&rdquo;) ขอแจ้งให้ท่านทราบว่า บริษัทฯ
+      ดำเนินธุรกิจภายใต้กรอบกฎหมายและมาตรฐานสากลด้าน Compliance อย่างเคร่งครัด รายละเอียดดังนี้</p>
+      <p><strong>&bull; มาตรการคว่ำบาตรระหว่างประเทศ (International Sanctions)</strong><br>
+      บริษัทฯ ปฏิบัติตามมาตรการคว่ำบาตรระหว่างประเทศอย่างเคร่งครัด และไม่ดำเนินธุรกิจกับบุคคล นิติบุคคล
+      หรือประเทศที่อยู่ภายใต้มาตรการของ:</p>
+      <ul>
+        <li>United Nations (UN)</li>
+        <li>United States OFAC</li>
+        <li>European Union (EU)</li>
+        <li>United Kingdom (UK)</li>
+      </ul>
+      <p><strong>&bull; การป้องกันการฟอกเงินและการสนับสนุนทางการเงินแก่การก่อการร้าย (AML/CFT)</strong><br>
+      บริษัทฯ มีนโยบายไม่รับ ไม่สนับสนุน และไม่มีส่วนเกี่ยวข้องกับ:</p>
+      <ul>
+        <li>การฟอกเงิน (Money Laundering)</li>
+        <li>การสนับสนุนทางการเงินแก่การก่อการร้าย (Terrorism Financing)</li>
+        <li>ธุรกรรมหรือกิจกรรมทางการค้าที่ผิดกฎหมาย</li>
+      </ul>
+      <p><strong>&bull; การตรวจสอบข้อมูลลูกค้า (KYC / Sanctions Screening)</strong><br>
+      เพื่อให้เป็นไปตามกฎหมายและมาตรฐานสากล บริษัทฯ ขอสงวนสิทธิ์ในการดำเนินการตรวจสอบ KYC, Compliance
+      และ Sanctions Screening สำหรับลูกค้าทุกรายตามความเหมาะสม</p>
+      <p><strong>&bull; การแจ้งเปลี่ยนแปลงข้อมูล</strong><br>
+      หากมีการเปลี่ยนแปลงข้อมูลที่มีนัยสำคัญ บริษัทฯ ขอความร่วมมือให้ท่านแจ้งให้ทราบโดยเร็ว ได้แก่:</p>
+      <ul>
+        <li>โครงสร้างผู้ถือหุ้น</li>
+        <li>ผู้มีอำนาจลงนาม</li>
+        <li>สถานะทางกฎหมาย</li>
+        <li>สถานะด้านมาตรการคว่ำบาตร</li>
+      </ul>
+      <p><strong>&bull; สิทธิ์ของบริษัทฯ</strong><br>
+      บริษัทฯ ขอสงวนสิทธิ์ในการระงับการดำเนินการหรือการให้บริการ หากตรวจพบประเด็นที่เกี่ยวข้องกับ
+      Compliance หรือ Sanctions โดยไม่ถือเป็นการผิดสัญญา</p>
+    </div>
+
+    <label class="consent">
+      <input type="checkbox" name="pdpa_accept" value="1" required {% if data.get('pdpa_accept') %}checked{% endif %}>
+      <span>ข้าพเจ้าในนามของบริษัทได้รับทราบและเข้าใจนโยบาย Compliance &amp; Sanctions ของบริษัท ปตท.
+      จำหน่ายก๊าซธรรมชาติ จำกัด และยินยอมให้บริษัทฯ ดำเนินการตามที่ระบุข้างต้นทุกประการ <b style="color:#c0392b">*</b></span>
+    </label>
+
+    <div class="grid g2" style="margin-top:12px">
+      <label class="f"><span class="lbl">ชื่อผู้ยืนยัน / Name</span>{{ tin('pdpa_name','หากเว้นว่างจะใช้ชื่อผู้ติดต่อ') }}</label>
+      <label class="f"><span class="lbl">ตำแหน่ง / Title</span>{{ tin('pdpa_title') }}</label>
+    </div>
   </div>
 </section>
 

@@ -130,6 +130,7 @@ TEXT_FIELDS = [
     "elec_base", "elec_peak", "elec_offpeak",
     "pea_kv", "mea_kv", "self_mw", "self_method", "elec_source_other",
     "chiller_avg", "chiller_base",
+    "pdpa_name", "pdpa_title",
 ]
 for _n in (1, 2, 3):
     TEXT_FIELDS += [f"fuel{_n}_type_other", f"fuel{_n}_unit_other"]
@@ -148,7 +149,7 @@ RADIO_FIELDS = ["inquiry_method", "fuel1_type", "fuel2_type", "fuel3_type",
                 "fuel1_grade", "fuel2_grade", "fuel3_grade",
                 "fuel1_unit", "fuel2_unit", "fuel3_unit"]
 MULTI_FIELDS = ["purpose", "elec_source"]
-BOOL_FIELDS = ["elec_bill", "elec_profile", "chiller_profile"]
+BOOL_FIELDS = ["elec_bill", "elec_profile", "chiller_profile", "pdpa_accept"]
 STAFF_FIELDS = ["staff_factory", "staff_received_date", "staff_recorded_date",
                 "staff_revision", "staff_recorder"]
 
@@ -177,6 +178,9 @@ def survey():
         data = collect_form(request.form)
         if not data["company_name"]:
             flash("กรุณากรอกชื่อบริษัท / Please enter your company name")
+            return render_template("survey.html", data=data), 400
+        if not data["pdpa_accept"]:
+            flash("กรุณากดยอมรับนโยบาย Compliance & Sanctions ก่อนส่งแบบสอบถาม")
             return render_template("survey.html", data=data), 400
         new_id = db_execute(
             "INSERT INTO submissions (created_at, company_name, contact_person, email, data)"
@@ -228,14 +232,21 @@ def admin_list():
     q = request.args.get("q", "").strip()
     if q:
         rows = db_execute(
-            "SELECT id, created_at, company_name, contact_person, email FROM submissions"
+            "SELECT id, created_at, company_name, contact_person, email, data FROM submissions"
             " WHERE company_name LIKE ? OR contact_person LIKE ? OR email LIKE ?"
             " ORDER BY id DESC", (f"%{q}%", f"%{q}%", f"%{q}%"), fetch="all")
     else:
         rows = db_execute(
-            "SELECT id, created_at, company_name, contact_person, email FROM submissions"
+            "SELECT id, created_at, company_name, contact_person, email, data FROM submissions"
             " ORDER BY id DESC", fetch="all")
-    return render_template("admin_list.html", rows=rows, q=q)
+    items = []
+    for r in rows:
+        d = json.loads(r["data"])
+        items.append({"id": r["id"], "created_at": r["created_at"],
+                      "company_name": r["company_name"],
+                      "contact_person": r["contact_person"], "email": r["email"],
+                      "pdpa": bool(d.get("pdpa_accept"))})
+    return render_template("admin_list.html", rows=items, q=q)
 
 
 def _load_submission(sid):

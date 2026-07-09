@@ -31,6 +31,20 @@
   </div>
 
   <section class="card">
+    <h2>นโยบาย Compliance &amp; Sanctions (PDPA)</h2>
+    <div class="card-body">
+      {% if d.get('pdpa_accept') %}
+        <p style="margin:0"><span class="pdpa-yes">&#10003; ลูกค้ารายนี้ยอมรับนโยบาย Compliance &amp; Sanctions แล้ว</span><br>
+        ผู้ยืนยัน: {{ d.get('pdpa_name') or d.get('contact_person') or '-' }}
+        {% if d.get('pdpa_title') %} — ตำแหน่ง: {{ d.get('pdpa_title') }}{% endif %}
+        | วันที่: {{ d.get('form_date') or '-' }}</p>
+      {% else %}
+        <p style="margin:0"><span class="pdpa-no">&#10007; รายนี้ยังไม่มีการยอมรับนโยบาย (ส่งเข้ามาก่อนเพิ่มระบบยินยอม)</span></p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="card">
     <h2>1. ข้อมูลทั่วไป / General Information</h2>
     <div class="card-body">
       <table class="kv">

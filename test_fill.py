@@ -34,6 +34,7 @@ sample = {
     "chiller2_rt": "250", "chiller2_type": "Air-cooled", "chiller2_cop": "3.1",
     "staff_factory": "existing", "staff_received_date": "06/07/2026",
     "staff_recorded_date": "06/07/2026", "staff_revision": "0", "staff_recorder": "ธีรเชษฐ์",
+    "pdpa_accept": True, "pdpa_name": "สมชาย ใจดี", "pdpa_title": "ผู้จัดการโรงงาน",
 }
 for r in range(1, 13):
     sample[f"month_label_{r}"] = f"{r:02d}/2025"
@@ -50,6 +51,7 @@ for i in range(1, 8):
 
 pdf = fill_pdf(sample, r"D:\Claude Code\gas-survey\test_filled.pdf")
 doc = pdfium.PdfDocument(r"D:\Claude Code\gas-survey\test_filled.pdf")
+print("pages:", len(doc))
 for i, page in enumerate(doc):
     img = page.render(scale=2.2).to_pil()
     img.save(rf"D:\Claude Code\gas-survey\test_p{i+1}.png")

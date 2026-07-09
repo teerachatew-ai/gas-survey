@@ -50,6 +50,16 @@ fields = {
     "chiller1_rt": "150", "chiller1_type": "Air-cooled", "chiller1_cop": "3.2",
 }
 
+# without consent -> must be rejected (HTTP 400)
+try:
+    r = post("/survey", fields)
+    print("no-consent submit ->", r.status, "(should be 400!)")
+except urllib.error.HTTPError as e:
+    print("no-consent submit rejected ->", e.code)
+
+fields["pdpa_accept"] = "1"
+fields["pdpa_name"] = "วิภา สุขใจ"
+fields["pdpa_title"] = "ผู้จัดการฝ่ายวิศวกรรม"
 r = post("/survey", fields)
 print("submit ->", r.status, r.url)
 
@@ -83,6 +93,11 @@ with open(r"D:\Claude Code\gas-survey\e2e_export2.pdf", "wb") as f:
 
 import pypdfium2 as pdfium
 doc = pdfium.PdfDocument(r"D:\Claude Code\gas-survey\e2e_export2.pdf")
-for i in (0, 2):
+print("pdf pages:", len(doc))
+for i in (0, 3):
     doc[i].render(scale=2.2).to_pil().save(rf"D:\Claude Code\gas-survey\e2e_p{i+1}.png")
+
+r = get("/admin")
+body = r.read().decode()
+print("admin list shows PDPA accepted:", "ยอมรับ" in body)
 print("OK")
