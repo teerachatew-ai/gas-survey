@@ -1,6 +1,7 @@
-// PNGD SL-FO-014-09 survey wizard: step navigation, autosave, review summary.
-// Pure progressive disclosure over the existing <form> — every field keeps
-// its original name/value, so server-side handling (app.py) needs no changes.
+// PNGD SL-FO-014-09 survey wizard: step navigation, autosave, review summary,
+// progressive disclosure (fuels/machines/expansion/chiller), quick-fill months,
+// and conditional inputs. Pure client-side layer over the existing <form> —
+// every field keeps its original name/value so app.py needs no changes.
 (function () {
   "use strict";
 
@@ -15,6 +16,7 @@
   };
   const STEP_ICONS = ["building", "flame", "gauge", "bolt", "shield", "clip"];
   const DRAFT_KEY = "pngd_survey_draft_v1";
+  const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   const form = document.getElementById("wizForm");
   const welcome = document.getElementById("wizWelcome");
@@ -31,10 +33,24 @@
   const pdpaCheckbox = document.getElementById("wizPdpaCheckbox");
   const consentErr = document.getElementById("wizConsentErr");
   const reviewCards = document.getElementById("wizReviewCards");
-  const addMachineBtn = document.getElementById("wizAddMachine");
 
   let step = 0; // 0 = welcome, 1..6 = steps
 
+  // ------------------------------------------------------------ helpers
+  function radioVal(name) {
+    const el = form.querySelector(`input[name="${CSS.escape(name)}"]:checked`);
+    return el ? el.value : "";
+  }
+  function multiVals(name) {
+    return Array.from(form.querySelectorAll(`input[name="${CSS.escape(name)}"]:checked`)).map(el => el.value);
+  }
+  function fieldVal(name) {
+    const el = form.elements[name];
+    return el ? (el.value || "").trim() : "";
+  }
+  function setShown(el, show) { if (el) el.hidden = !show; }
+
+  // ------------------------------------------------------------ stepper / nav
   function buildStepper() {
     stepper.innerHTML = STEP_ICONS.map((name, i) => {
       const n = i + 1;
@@ -117,35 +133,132 @@
     if (pdpaCheckbox.checked) consentErr.style.display = "none";
   });
 
-  // ---------------------------------------------------------- copy-to-all-months
-  document.querySelectorAll(".wiz-copy-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const n = btn.dataset.copyFuel;
-      const cons = form.elements[`fuel${n}_cons_1`];
-      const price = form.elements[`fuel${n}_price_1`];
-      if (!cons || !price) return;
-      for (let r = 2; r <= 12; r++) {
-        const cEl = form.elements[`fuel${n}_cons_${r}`];
-        const pEl = form.elements[`fuel${n}_price_${r}`];
-        if (cEl) { cEl.value = cons.value; cEl.dispatchEvent(new Event("input", { bubbles: true })); }
-        if (pEl) { pEl.value = price.value; pEl.dispatchEvent(new Event("input", { bubbles: true })); }
-      }
-    });
+  // ------------------------------------------------------------ conditional inputs
+  // fuel n: grade row only for fuel oil; "other" text inputs only when Other picked
+  function refreshFuelConds(n) {
+    const type = radioVal(`fuel${n}_type`);
+    setShown(document.getElementById(`f${n}GradeRow`), type === "fuel_oil");
+    setShown(document.getElementById(`f${n}TypeOther`), type === "other");
+    setShown(document.getElementById(`f${n}UnitOther`), radioVal(`fuel${n}_unit`) === "other");
+  }
+  [1, 2, 3].forEach(n => {
+    form.querySelectorAll(`input[name="fuel${n}_type"], input[name="fuel${n}_unit"]`)
+      .forEach(el => el.addEventListener("change", () => refreshFuelConds(n)));
   });
 
-  // ---------------------------------------------------------- add machine
+  function refreshPurposeConds() {
+    const p = multiVals("purpose");
+    setShown(document.getElementById("steamExtra"), p.includes("steam"));
+    setShown(document.getElementById("purposeOtherWrap"), p.includes("other"));
+  }
+  form.querySelectorAll('input[name="purpose"]').forEach(el => el.addEventListener("change", refreshPurposeConds));
+
+  function refreshElecConds() {
+    const s = multiVals("elec_source");
+    setShown(document.getElementById("peaExtra"), s.includes("pea"));
+    setShown(document.getElementById("meaExtra"), s.includes("mea"));
+    setShown(document.getElementById("selfExtra"), s.includes("self"));
+    setShown(document.getElementById("elecOtherWrap"), s.includes("other"));
+  }
+  form.querySelectorAll('input[name="elec_source"]').forEach(el => el.addEventListener("change", refreshElecConds));
+
+  function refreshAllConds() {
+    [1, 2, 3].forEach(refreshFuelConds);
+    refreshPurposeConds();
+    refreshElecConds();
+  }
+
+  // ------------------------------------------------------------ add fuel 2 / 3
+  const addFuelBtn = document.getElementById("wizAddFuel");
+  function fuelGroup(n) { return document.querySelector(`.wiz-fuel-group[data-fuel-group="${n}"]`); }
+  function refreshAddFuelBtn() {
+    const nextHidden = [2, 3].find(n => fuelGroup(n).hidden);
+    if (nextHidden) {
+      addFuelBtn.hidden = false;
+      addFuelBtn.textContent = WIZ_I18N.addFuelBtn.replace("{n}", nextHidden);
+    } else {
+      addFuelBtn.hidden = true;
+    }
+  }
+  addFuelBtn.addEventListener("click", () => {
+    const nextHidden = [2, 3].find(n => fuelGroup(n).hidden);
+    if (nextHidden) fuelGroup(nextHidden).hidden = false;
+    refreshAddFuelBtn();
+  });
+
+  // ------------------------------------------------------------ quick-fill months
+  function propagate(n, kind, value) {
+    for (let r = 1; r <= 12; r++) {
+      const el = form.elements[`fuel${n}_${kind}_${r}`];
+      if (el) el.value = value;
+    }
+  }
+  document.querySelectorAll(".wiz-quick-cons").forEach(inp => {
+    inp.addEventListener("input", () => { propagate(inp.dataset.fuel, "cons", inp.value.trim()); scheduleSave(); });
+  });
+  document.querySelectorAll(".wiz-quick-price").forEach(inp => {
+    inp.addEventListener("input", () => { propagate(inp.dataset.fuel, "price", inp.value.trim()); scheduleSave(); });
+  });
+  function initQuickFromMonths() {
+    [1, 2, 3].forEach(n => {
+      const cons = document.querySelector(`.wiz-quick-cons[data-fuel="${n}"]`);
+      const price = document.querySelector(`.wiz-quick-price[data-fuel="${n}"]`);
+      if (cons && !cons.value) cons.value = fieldVal(`fuel${n}_cons_1`);
+      if (price && !price.value) price.value = fieldVal(`fuel${n}_price_1`);
+    });
+  }
+
+  // month detail toggle
+  const monthToggle = document.getElementById("wizMonthToggle");
+  const monthDetail = document.getElementById("wizMonthDetail");
+  monthToggle.addEventListener("click", () => {
+    const open = monthDetail.hidden;
+    monthDetail.hidden = !open;
+    monthToggle.setAttribute("aria-expanded", String(open));
+  });
+
+  // ------------------------------------------------------------ auto labels
+  function autoMonthLabels() {
+    const anyFilled = [];
+    for (let r = 1; r <= 12; r++) anyFilled.push(fieldVal(`month_label_${r}`));
+    if (anyFilled.some(v => v)) return;
+    const now = new Date();
+    for (let r = 1; r <= 12; r++) {
+      // last 12 months, oldest first, ending with last month (MMM-YY like the form's example)
+      const d = new Date(now.getFullYear(), now.getMonth() - (12 - r) - 1, 1);
+      const el = form.elements[`month_label_${r}`];
+      if (el) el.value = `${MONTH_ABBR[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
+    }
+  }
+  function autoYearLabels() {
+    const y0 = new Date().getFullYear();
+    for (let i = 1; i <= 7; i++) {
+      const el = form.elements[`year_${i}`];
+      if (el && !el.value.trim()) el.value = String(y0 + i);
+    }
+  }
+
+  // ------------------------------------------------------------ add machine
+  const addMachineBtn = document.getElementById("wizAddMachine");
   function refreshAddMachineVisibility() {
-    const anyHidden = document.querySelector(".wiz-machine-box[hidden]");
-    addMachineBtn.hidden = !anyHidden;
+    addMachineBtn.hidden = !document.querySelector(".wiz-machine-box[hidden]");
   }
   addMachineBtn.addEventListener("click", () => {
     const nextHidden = document.querySelector(".wiz-machine-box[hidden]");
     if (nextHidden) nextHidden.removeAttribute("hidden");
     refreshAddMachineVisibility();
   });
-  refreshAddMachineVisibility();
 
-  // ---------------------------------------------------------- autosave
+  // ------------------------------------------------------------ expansion / chiller toggles
+  const expToggle = document.getElementById("wizExpansionToggle");
+  const expGroup = document.getElementById("wizExpansionGroup");
+  expToggle.addEventListener("click", () => { expGroup.hidden = false; expToggle.hidden = true; });
+
+  const chToggle = document.getElementById("wizChillerToggle");
+  const chGroup = document.getElementById("wizChillerGroup");
+  chToggle.addEventListener("click", () => { chGroup.hidden = false; chToggle.hidden = true; });
+
+  // ------------------------------------------------------------ autosave
   let saveTimer = null;
   function serializeForm() {
     const fd = new FormData(form);
@@ -184,6 +297,7 @@
       const val = draft[name];
       const values = Array.isArray(val) ? val : [val];
       els.forEach(el => {
+        if (el.type === "hidden") return; // keep server-set metadata (channel = Online)
         if (el.type === "checkbox" || el.type === "radio") {
           if (values.includes(el.value)) el.checked = true;
         } else if (!el.value) {
@@ -191,22 +305,31 @@
         }
       });
     });
-    refreshAddMachineVisibility();
   }
-  if (!HAS_SERVER_DATA) restoreDraft();
 
-  // ---------------------------------------------------------- review step
-  function fieldVal(name) {
-    const el = form.elements[name];
-    return el ? (el.value || "").trim() : "";
+  // reveal optional groups that already contain data (draft or server re-render)
+  function revealGroupsWithData() {
+    [2, 3].forEach(n => {
+      if (radioVal(`fuel${n}_type`) || fieldVal(`fuel${n}_cons_1`)) fuelGroup(n).hidden = false;
+    });
+    refreshAddFuelBtn();
+
+    document.querySelectorAll(".wiz-machine-box[hidden]").forEach(box => {
+      const hasVal = Array.from(box.querySelectorAll("input")).some(i => i.value.trim());
+      if (hasVal) box.hidden = false;
+    });
+    refreshAddMachineVisibility();
+
+    const expHasData = ["product_expansion", "startup_expansion", "ophour_expansion", "opday_expansion"]
+      .some(f => fieldVal(f));
+    if (expHasData) { expGroup.hidden = false; expToggle.hidden = true; }
+
+    const chHasData = ["chiller_avg", "chiller_base", "chiller1_rt", "chiller1_type"].some(f => fieldVal(f))
+      || form.elements["chiller_profile"].checked;
+    if (chHasData) { chGroup.hidden = false; chToggle.hidden = true; }
   }
-  function radioVal(name) {
-    const el = form.querySelector(`input[name="${CSS.escape(name)}"]:checked`);
-    return el ? el.value : "";
-  }
-  function multiVals(name) {
-    return Array.from(form.querySelectorAll(`input[name="${CSS.escape(name)}"]:checked`)).map(el => el.value);
-  }
+
+  // ------------------------------------------------------------ review step
   function card(iconName, label, value, gotoStep, ok) {
     return `<div class="wiz-sumcard ${ok ? "ok" : ""}">
       <span class="ic">${ICONS[iconName]}</span>
@@ -218,10 +341,8 @@
   function renderReview() {
     const empty = WIZ_I18N.reviewEmpty;
 
-    // company
     const company = fieldVal("company_name") || empty;
 
-    // fuel
     const f1 = radioVal("fuel1_type");
     let fuelLine = empty;
     if (f1) {
@@ -235,19 +356,16 @@
       fuelLine = cons ? `${label} · ${cons} ${unit}` : label;
     }
 
-    // gas plan
     const purposes = multiVals("purpose").map(v => REVIEW_I18N.purpose[v] || v);
     const supplyDate = fieldVal("ng_supply_date");
     let gasLine = purposes.length ? purposes.join(" + ") : empty;
     if (supplyDate) gasLine = (purposes.length ? gasLine + " · " : "") + supplyDate;
 
-    // electricity
     const sources = multiVals("elec_source").map(v => REVIEW_I18N.elec_source[v] || v);
     const base = fieldVal("elec_base");
     let elecLine = sources.length ? sources.join(" + ") : empty;
     if (base) elecLine += ` · Base ${base} MWh`;
 
-    // compliance
     const consentOk = pdpaCheckbox.checked;
     const signer = fieldVal("pdpa_name") || fieldVal("contact_person");
     const complianceLine = consentOk
@@ -262,10 +380,17 @@
       card("shield", WIZ_I18N.cardCompliance, complianceLine, 5, consentOk);
   }
 
-  reviewCards && reviewCards.addEventListener("click", (e) => {
+  reviewCards.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-goto]");
     if (btn) goTo(Number(btn.dataset.goto));
   });
 
+  // ------------------------------------------------------------ init
+  if (!HAS_SERVER_DATA) restoreDraft();
+  revealGroupsWithData();
+  refreshAllConds();
+  initQuickFromMonths();
+  autoMonthLabels();
+  autoYearLabels();
   render();
 })();

@@ -7,24 +7,17 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="wizard-body">
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <defs>
-    <linearGradient id="wzFlameGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0a6fd0"/><stop offset="1" stop-color="#00c2b0"/>
-    </linearGradient>
-  </defs>
-  <symbol id="wz-logo" viewBox="0 0 48 48">
-    <rect width="48" height="48" rx="13" fill="url(#wzFlameGrad)"/>
-    <path d="M24 8 C27.5 13.5 34 17.5 34 25.5 A10 10 0 1 1 14 25.5 C14 17.5 20.5 13.5 24 8 Z" fill="#fff"/>
-    <path d="M24 20.5 C25.8 23.2 29 24.8 29 28.6 A5 5 0 1 1 19 28.6 C19 24.8 22.2 23.2 24 20.5 Z" fill="#63e0d2"/>
-  </symbol>
-</svg>
+{% include '_logo_defs.html' %}
 
 <div class="wiz-wrap">
   <div class="wiz-topbar">
     <div class="wiz-lockup">
-      <svg width="38" height="38"><use href="#wz-logo"/></svg>
+      {% if has_logo %}
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="PTT NGD" class="wiz-logo-img">
+      {% else %}
+      <svg width="31" height="40"><use href="#wz-logo"/></svg>
       <div class="nm">{{ t('brand_short') }}<small>{{ t('brand_tagline') }}</small></div>
+      {% endif %}
     </div>
   </div>
 

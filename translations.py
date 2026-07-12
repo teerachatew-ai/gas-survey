@@ -345,6 +345,78 @@ TEXTS = {
     "review_card_compliance": {"th": "Compliance & Sanctions", "en": "Compliance & Sanctions", "zh": "合规与制裁"},
     "review_consent_yes": {"th": "ยินยอมแล้ว", "en": "Consent given", "zh": "已同意"},
     "review_consent_no": {"th": "ยังไม่ได้ยินยอม", "en": "Not yet accepted", "zh": "尚未同意"},
+
+    # ---------- UX simplification pass ----------
+    "s1_why": {
+        "th": "ขอข้อมูลพื้นฐานสำหรับให้วิศวกร PNGD ติดต่อกลับ — บังคับกรอกเฉพาะชื่อบริษัท",
+        "en": "Basic details so a PNGD engineer can contact you — only the company name is required.",
+        "zh": "用于PNGD工程师与您联系的基本信息——仅公司名称为必填。",
+    },
+    "s2_why": {
+        "th": "เลือกเชื้อเพลิงที่ใช้อยู่ แล้วกรอกปริมาณเฉลี่ยต่อเดือน — ระบบจะกระจายให้ครบ 12 เดือนเอง",
+        "en": "Pick your current fuel and enter the average monthly amount — we fill in all 12 months for you.",
+        "zh": "选择当前使用的燃料并填写每月平均用量——系统会自动填满12个月。",
+    },
+    "s3_why": {
+        "th": "ข้อมูลโรงงานและแผนการใช้ก๊าซ เพื่อออกแบบระบบส่งก๊าซให้เหมาะสม",
+        "en": "Your plant and gas-usage plan, so we can design the right supply system.",
+        "zh": "工厂信息与用气计划，用于设计合适的供气系统。",
+    },
+    "s4_why": {
+        "th": "กรอกเท่าที่มีข้อมูล — ทุกช่องในหน้านี้ข้ามได้",
+        "en": "Fill in what you know — every field on this page is optional.",
+        "zh": "了解多少填多少——本页所有内容均可跳过。",
+    },
+    "add_fuel_btn": {
+        "th": "＋ ใช้เชื้อเพลิงมากกว่า 1 ชนิด? เพิ่มเชื้อเพลิงชนิดที่ {n}",
+        "en": "＋ Use more than one fuel? Add fuel type {n}",
+        "zh": "＋ 使用多种燃料？添加燃料 {n}",
+    },
+    "quick_cons": {
+        "th": "ปริมาณที่ใช้เฉลี่ยต่อเดือน",
+        "en": "Average consumption per month",
+        "zh": "每月平均用量",
+    },
+    "quick_price": {
+        "th": "ราคาเฉลี่ย (บาทต่อหน่วย)",
+        "en": "Average price (Baht per unit)",
+        "zh": "平均价格（泰铢/单位）",
+    },
+    "quick_hint": {
+        "th": "ระบบจะใส่ค่านี้ให้ครบ 12 เดือนอัตโนมัติ — ถ้าแต่ละเดือนไม่เท่ากัน กดแก้รายเดือนด้านล่างได้",
+        "en": "This value is applied to all 12 months automatically — open the monthly editor below to fine-tune.",
+        "zh": "系统会将此数值自动应用到全部12个月——如各月不同，可在下方逐月修改。",
+    },
+    "detail_toggle": {
+        "th": "กรอกละเอียดรายเดือน (ไม่บังคับ)",
+        "en": "Edit month by month (optional)",
+        "zh": "逐月填写（可选）",
+    },
+    "current_project_head": {
+        "th": "โครงการปัจจุบัน / Current Project",
+        "en": "Current Project",
+        "zh": "当前项目 / Current Project",
+    },
+    "expansion_toggle": {
+        "th": "＋ มีโครงการขยาย / กำลังก่อสร้าง? กรอกเพิ่ม (ถ้ามี)",
+        "en": "＋ Have an expansion project under construction? Add it (optional)",
+        "zh": "＋ 有在建/扩建项目？点击填写（可选）",
+    },
+    "expansion_head": {
+        "th": "โครงการกำลังก่อสร้าง – แผนงาน / Expansion Plan",
+        "en": "Expansion Plan",
+        "zh": "在建项目－扩建计划 / Expansion Plan",
+    },
+    "chiller_toggle": {
+        "th": "＋ มีการใช้ความเย็น (Chiller)? กรอกเพิ่ม (ถ้ามี)",
+        "en": "＋ Use chillers? Add chiller details (optional)",
+        "zh": "＋ 使用制冷机（Chiller）？点击填写（可选）",
+    },
+    "future_hint": {
+        "th": "ปีถูกใส่ให้อัตโนมัติ — กรอกเฉพาะปีที่มีแผน เว้นว่างได้",
+        "en": "Years are pre-filled — enter only the years you have plans for; leave the rest blank.",
+        "zh": "年份已自动填写——只需填写有计划的年份，其余留空即可。",
+    },
 }
 
 

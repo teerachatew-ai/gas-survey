@@ -52,25 +52,18 @@
 </label>
 {%- endmacro %}
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <defs>
-    <linearGradient id="wzFlameGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0a6fd0"/><stop offset="1" stop-color="#00c2b0"/>
-    </linearGradient>
-  </defs>
-  <symbol id="wz-logo" viewBox="0 0 48 48">
-    <rect width="48" height="48" rx="13" fill="url(#wzFlameGrad)"/>
-    <path d="M24 8 C27.5 13.5 34 17.5 34 25.5 A10 10 0 1 1 14 25.5 C14 17.5 20.5 13.5 24 8 Z" fill="#fff"/>
-    <path d="M24 20.5 C25.8 23.2 29 24.8 29 28.6 A5 5 0 1 1 19 28.6 C19 24.8 22.2 23.2 24 20.5 Z" fill="#63e0d2"/>
-  </symbol>
-</svg>
+{% include '_logo_defs.html' %}
 
 <div class="wiz-wrap">
 
   <div class="wiz-topbar">
     <div class="wiz-lockup">
-      <svg width="38" height="38"><use href="#wz-logo"/></svg>
+      {% if has_logo %}
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="PTT NGD" class="wiz-logo-img">
+      {% else %}
+      <svg width="31" height="40"><use href="#wz-logo"/></svg>
       <div class="nm">{{ t('brand_short') }}<small>{{ t('brand_tagline') }}</small></div>
+      {% endif %}
     </div>
     <div class="wiz-langswitch">
       <a href="?lang=th" class="{{ 'on' if lang=='th' }}">ไทย</a>
@@ -100,7 +93,11 @@
 
         <!-- ================= WELCOME ================= -->
         <div id="wizWelcome" class="active">
-          <svg class="mark" width="68" height="68"><use href="#wz-logo"/></svg>
+          {% if has_logo %}
+          <img src="{{ url_for('static', filename='logo.png') }}" alt="PTT NGD" class="wiz-logo-img welcome-logo">
+          {% else %}
+          <svg class="mark" width="54" height="70"><use href="#wz-logo"/></svg>
+          {% endif %}
           <h2>{{ t('welcome_kicker') }}</h2>
           <div class="wiz-time-chip">{{ icon('clock') }} {{ t('welcome_time_chip') }}</div>
 
@@ -120,16 +117,12 @@
 
         <!-- ================= STEP 1 : General info ================= -->
         <div class="step-panel" data-step="1">
-          <h2 class="wiz-h">{{ t('s1_title') }}<small>{{ t('part13') }}</small></h2>
+          <h2 class="wiz-h">{{ t('s1_title') }}</h2>
+          <p class="wiz-why">{{ t('s1_why') }}</p>
 
-          <div class="wiz-fieldnote">{{ t('channel') }}</div>
-          <div class="wiz-chiprow" style="margin-bottom:14px">
-            {{ rad('inquiry_method','inquire', t('ch_inquire')) }}
-            {{ rad('inquiry_method','fax', t('ch_fax')) }}
-            {{ rad('inquiry_method','email', t('ch_email')) }}
-            {{ rad('inquiry_method','other', t('ch_other')) }}
-          </div>
-          <div class="fld"><label class="lbl">{{ t('specify_ph') }} ({{ t('ch_other') }})</label>{{ tin('inquiry_other', t('specify_ph')) }}</div>
+          {# intake channel is internal metadata — recorded automatically as "Online" #}
+          <input type="hidden" name="inquiry_method" value="other">
+          <input type="hidden" name="inquiry_other" value="Online">
 
           <div class="fld"><label class="lbl">{{ t('f_company') }}</label>{{ tin('company_name') }}</div>
           <div id="wizCompanyErr" class="wiz-inline-note" style="color:var(--wz-danger);display:none">{{ t('err_company_required') }}</div>
@@ -137,86 +130,96 @@
           <div class="wiz-grid2">
             <div class="fld"><label class="lbl">{{ t('f_contact') }}</label>{{ tin('contact_person') }}</div>
             <div class="fld"><label class="lbl">{{ t('f_email') }}</label>{{ tin('email') }}</div>
-            <div class="fld"><label class="lbl">{{ t('f_nationality') }}</label>{{ tin('nationality') }}</div>
-            <div class="fld"><label class="lbl">{{ t('f_bustype') }}</label>{{ tin('business_type') }}</div>
-          </div>
-          <div class="wiz-grid3">
             <div class="fld"><label class="lbl">{{ t('f_mobile') }}</label>{{ tin('mobile') }}</div>
             <div class="fld"><label class="lbl">{{ t('f_tel') }}</label>{{ tin('tel') }}</div>
-            <div class="fld"><label class="lbl">{{ t('f_fax') }}</label>{{ tin('fax') }}</div>
+            <div class="fld"><label class="lbl">{{ t('f_nationality') }}</label>{{ tin('nationality') }}</div>
+            <div class="fld"><label class="lbl">{{ t('f_bustype') }}</label>{{ tin('business_type') }}</div>
           </div>
         </div>
 
         <!-- ================= STEP 2 : Fuel ================= -->
         <div class="step-panel" data-step="2">
           <h2 class="wiz-h">{{ t('s2_title') }}</h2>
-
-          <h3 class="wiz-subhead">{{ t('s21_head') }}</h3>
-          <p class="wiz-why">{{ t('s21_hint')|safe }}</p>
+          <p class="wiz-why">{{ t('s2_why') }}</p>
 
           {% for n in [1,2,3] %}
-          <h4 class="wiz-h4" style="margin-top:{{ '0' if n==1 else '20px' }}">{{ t('fuel_type_n').format(n=n) }}</h4>
-          <div class="wiz-optgrid">
-            {{ fueltype_card('fuel'~n~'_type','fuel_oil','flame', t('opt_fuel_oil')) }}
-            {{ fueltype_card('fuel'~n~'_type','lpg','lpg', t('opt_lpg')) }}
-            {{ fueltype_card('fuel'~n~'_type','diesel','diesel', t('opt_diesel')) }}
-            {{ fueltype_card('fuel'~n~'_type','natural_gas','gauge', t('opt_ng')) }}
+          {% set fuel_has_data = data.get('fuel'~n~'_type') or data.get('fuel'~n~'_cons_1') %}
+          <div class="wiz-fuel-group" data-fuel-group="{{ n }}" {% if n > 1 and not fuel_has_data %}hidden{% endif %}>
+            <h4 class="wiz-h4" style="margin-top:{{ '0' if n==1 else '20px' }}">{{ t('fuel_type_n').format(n=n) }}</h4>
+            <div class="wiz-optgrid">
+              {{ fueltype_card('fuel'~n~'_type','fuel_oil','flame', t('opt_fuel_oil')) }}
+              {{ fueltype_card('fuel'~n~'_type','lpg','lpg', t('opt_lpg')) }}
+              {{ fueltype_card('fuel'~n~'_type','diesel','diesel', t('opt_diesel')) }}
+              {{ fueltype_card('fuel'~n~'_type','natural_gas','gauge', t('opt_ng')) }}
+            </div>
+            <div class="wiz-chiprow" style="margin-top:10px">
+              {{ rad('fuel'~n~'_type','other', t('opt_other')) }}
+              <span id="f{{ n }}TypeOther" hidden>{{ tin('fuel'~n~'_type_other', t('specify_ph'), 'inline-input') }}</span>
+            </div>
+            <div id="f{{ n }}GradeRow" hidden>
+              <div class="wiz-fieldnote" style="margin-top:12px">{{ t('opt_grade') }}</div>
+              <div class="wiz-chiprow" style="margin-bottom:12px">
+                {{ rad('fuel'~n~'_grade','A','A') }}
+                {{ rad('fuel'~n~'_grade','C','C') }}
+              </div>
+            </div>
+            <div class="wiz-fieldnote" style="margin-top:12px">{{ t('unit_head') }}</div>
+            <div class="wiz-chiprow">
+              {{ rad('fuel'~n~'_unit','liter', t('opt_liter')) }}
+              {{ rad('fuel'~n~'_unit','kg', t('opt_kg')) }}
+              {{ rad('fuel'~n~'_unit','mmbtu', t('opt_mmbtu')) }}
+              {{ rad('fuel'~n~'_unit','other', t('opt_other')) }}
+              <span id="f{{ n }}UnitOther" hidden>{{ tin('fuel'~n~'_unit_other', t('specify_ph'), 'inline-input') }}</span>
+            </div>
+            <div class="wiz-quickbox">
+              <div class="wiz-grid2">
+                <div class="fld" style="margin-bottom:0"><label class="lbl">{{ t('quick_cons') }}</label>
+                  <input type="text" class="wiz-input wiz-quick-cons" data-fuel="{{ n }}" inputmode="decimal"></div>
+                <div class="fld" style="margin-bottom:0"><label class="lbl">{{ t('quick_price') }}</label>
+                  <input type="text" class="wiz-input wiz-quick-price" data-fuel="{{ n }}" inputmode="decimal"></div>
+              </div>
+              <p class="wiz-inline-note" style="margin:8px 0 0">{{ t('quick_hint') }}</p>
+            </div>
           </div>
-          <div class="wiz-chiprow" style="margin-top:10px">
-            {{ rad('fuel'~n~'_type','other', t('opt_other')) }}
-            {{ tin('fuel'~n~'_type_other', t('specify_ph'), 'inline-input') }}
-          </div>
-          <div class="wiz-fieldnote" style="margin-top:12px">{{ t('opt_grade') }}</div>
-          <div class="wiz-chiprow" style="margin-bottom:12px">
-            {{ rad('fuel'~n~'_grade','A','A') }}
-            {{ rad('fuel'~n~'_grade','C','C') }}
-          </div>
-          <div class="wiz-fieldnote">{{ t('unit_head') }}</div>
-          <div class="wiz-chiprow">
-            {{ rad('fuel'~n~'_unit','liter', t('opt_liter')) }}
-            {{ rad('fuel'~n~'_unit','kg', t('opt_kg')) }}
-            {{ rad('fuel'~n~'_unit','mmbtu', t('opt_mmbtu')) }}
-            {{ rad('fuel'~n~'_unit','other', t('opt_other')) }}
-            {{ tin('fuel'~n~'_unit_other', t('specify_ph'), 'inline-input') }}
-          </div>
-          {% if n < 3 %}<hr style="border:0;border-top:1px dashed var(--wz-line);margin:18px 0">{% endif %}
           {% endfor %}
+          <button type="button" class="wiz-add-machine" id="wizAddFuel">{{ t('add_fuel_btn').format(n=2) }}</button>
 
-          <div class="wiz-fueltable-wrap" style="margin-top:18px">
-            <table class="wiz-table">
-              <thead>
-                <tr>
-                  <th rowspan="2" style="min-width:76px">{{ t('tbl_month')|safe }}</th>
-                  {% for n in [1,2,3] %}
-                  <th colspan="2">
-                    {{ t('fuel_type_n').format(n=n) }}<br>
-                    <button type="button" class="wiz-copy-btn" data-copy-fuel="{{ n }}">{{ t('copy_all_months') }}</button>
-                  </th>
+          <button type="button" class="wiz-detail-toggle" id="wizMonthToggle" aria-expanded="false">
+            <span class="tri">&#9656;</span> {{ t('detail_toggle') }}
+          </button>
+          <div id="wizMonthDetail" hidden>
+            <div class="wiz-fueltable-wrap" style="margin-top:10px">
+              <table class="wiz-table">
+                <thead>
+                  <tr>
+                    <th rowspan="2" style="min-width:76px">{{ t('tbl_month')|safe }}</th>
+                    {% for n in [1,2,3] %}<th colspan="2">{{ t('fuel_type_n').format(n=n) }}</th>{% endfor %}
+                  </tr>
+                  <tr>
+                    {% for n in [1,2,3] %}
+                    <th>{{ t('tbl_cons') }}</th>
+                    <th>{{ t('tbl_price') }}</th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r in range(1,13) %}
+                  <tr>
+                    <td>{{ tin('month_label_'~r, t('month_ph')) }}</td>
+                    {% for n in [1,2,3] %}
+                    <td>{{ tin('fuel'~n~'_cons_'~r) }}</td>
+                    <td>{{ tin('fuel'~n~'_price_'~r) }}</td>
+                    {% endfor %}
+                  </tr>
                   {% endfor %}
-                </tr>
-                <tr>
-                  {% for n in [1,2,3] %}
-                  <th>{{ t('tbl_cons') }}</th>
-                  <th>{{ t('tbl_price') }}</th>
-                  {% endfor %}
-                </tr>
-              </thead>
-              <tbody>
-                {% for r in range(1,13) %}
-                <tr>
-                  <td>{{ tin('month_label_'~r, t('month_ph')) }}</td>
-                  {% for n in [1,2,3] %}
-                  <td>{{ tin('fuel'~n~'_cons_'~r) }}</td>
-                  <td>{{ tin('fuel'~n~'_price_'~r) }}</td>
-                  {% endfor %}
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
+            <p class="wiz-inline-note">{{ t('tbl_price_unit') }}</p>
           </div>
-          <p class="wiz-inline-note">{{ t('copy_all_hint') }} · {{ t('tbl_price_unit') }}</p>
 
           <h3 class="wiz-subhead">{{ t('s22_head')|safe }}</h3>
+          <p class="wiz-why" style="margin-bottom:8px">{{ t('future_hint') }}</p>
           <div class="wiz-fueltable-wrap">
             <table class="wiz-table">
               <thead>
@@ -245,30 +248,28 @@
 
         <!-- ================= STEP 3 : Energy usage ================= -->
         <div class="step-panel" data-step="3">
-          <h2 class="wiz-h">{{ t('s3_title') }}<small>{{ t('part23') }}</small></h2>
+          <h2 class="wiz-h">{{ t('s3_title') }}</h2>
+          <p class="wiz-why">{{ t('s3_why') }}</p>
 
           <h3 class="wiz-subhead">{{ t('s31_head') }}</h3>
-          <div class="wiz-fueltable-wrap">
-            <table class="wiz-table">
-              <thead>
-                <tr>
-                  <th style="text-align:left;min-width:120px"></th>
-                  <th>{{ t('col_current')|safe }}</th>
-                  <th>{{ t('col_expansion')|safe }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><th style="text-align:left">{{ t('row_product') }}</th>
-                  <td>{{ tin('product_current') }}</td><td>{{ tin('product_expansion') }}</td></tr>
-                <tr><th style="text-align:left">{{ t('row_startup') }}</th>
-                  <td>{{ tin('startup_current') }}</td><td>{{ tin('startup_expansion') }}</td></tr>
-                <tr><th style="text-align:left">{{ t('row_ophour') }}</th>
-                  <td>{{ tin('ophour_current') }}</td><td>{{ tin('ophour_expansion') }}</td></tr>
-                <tr><th style="text-align:left">{{ t('row_opday') }}</th>
-                  <td>{{ tin('opday_current') }}</td><td>{{ tin('opday_expansion') }}</td></tr>
-              </tbody>
-            </table>
+          <div class="wiz-fieldnote">{{ t('current_project_head') }}</div>
+          <div class="wiz-grid2">
+            <div class="fld"><label class="lbl">{{ t('row_product') }}</label>{{ tin('product_current') }}</div>
+            <div class="fld"><label class="lbl">{{ t('row_startup') }}</label>{{ tin('startup_current') }}</div>
+            <div class="fld"><label class="lbl">{{ t('row_ophour') }}</label>{{ tin('ophour_current') }}</div>
+            <div class="fld"><label class="lbl">{{ t('row_opday') }}</label>{{ tin('opday_current') }}</div>
           </div>
+          {% set exp_has_data = data.get('product_expansion') or data.get('startup_expansion') or data.get('ophour_expansion') or data.get('opday_expansion') %}
+          <div id="wizExpansionGroup" {% if not exp_has_data %}hidden{% endif %}>
+            <div class="wiz-fieldnote" style="margin-top:10px">{{ t('expansion_head') }}</div>
+            <div class="wiz-grid2">
+              <div class="fld"><label class="lbl">{{ t('row_product') }}</label>{{ tin('product_expansion') }}</div>
+              <div class="fld"><label class="lbl">{{ t('row_startup') }}</label>{{ tin('startup_expansion') }}</div>
+              <div class="fld"><label class="lbl">{{ t('row_ophour') }}</label>{{ tin('ophour_expansion') }}</div>
+              <div class="fld"><label class="lbl">{{ t('row_opday') }}</label>{{ tin('opday_expansion') }}</div>
+            </div>
+          </div>
+          <button type="button" class="wiz-add-machine" id="wizExpansionToggle" {% if exp_has_data %}hidden{% endif %}>{{ t('expansion_toggle') }}</button>
 
           <h3 class="wiz-subhead">{{ t('s32_head') }}</h3>
           <div class="wiz-grid2">
@@ -279,14 +280,16 @@
           <div class="wiz-fieldnote">{{ t('f_purpose') }}</div>
           <div class="wiz-chiprow" style="align-items:center">
             {{ chk('purpose','steam', t('p_steam')) }}
+            {{ chk('purpose','drying', t('p_drying')) }}
+            {{ chk('purpose','melting', t('p_melting')) }}
+            {{ chk('purpose','other', t('p_other')) }}
+          </div>
+          <div class="wiz-chiprow" id="steamExtra" style="align-items:center;margin-top:8px" hidden>
             <span style="font-size:12.5px;color:var(--wz-muted)">{{ t('p_pressure') }}</span>
             {{ tin('steam_pressure','','sm') }}
             <span style="font-size:12.5px;color:var(--wz-muted)">Bar(g)</span>
           </div>
-          <div class="wiz-chiprow" style="margin-top:8px">
-            {{ chk('purpose','drying', t('p_drying')) }}
-            {{ chk('purpose','melting', t('p_melting')) }}
-            {{ chk('purpose','other', t('p_other')) }}
+          <div class="wiz-chiprow" id="purposeOtherWrap" style="margin-top:8px" hidden>
             {{ tin('purpose_other', t('specify_ph'), 'inline-input') }}
           </div>
 
@@ -318,55 +321,64 @@
 
         <!-- ================= STEP 4 : Electricity & chiller ================= -->
         <div class="step-panel" data-step="4">
-          <h2 class="wiz-h">{{ t('s4_title') }}<small>{{ t('part33') }}</small></h2>
+          <h2 class="wiz-h">{{ t('s4_title') }}</h2>
+          <p class="wiz-why">{{ t('s4_why') }}</p>
 
           <h3 class="wiz-subhead">{{ t('s41_head') }}</h3>
-          <div class="wiz-chiprow">
-            {{ bchk('elec_bill', t('e_bill')) }}
-            {{ bchk('elec_profile', t('e_profile')) }}
-          </div>
-          <div class="wiz-grid3" style="margin-top:14px">
+          <div class="wiz-grid3">
             <div class="fld"><label class="lbl">{{ t('e_base') }}</label>{{ tin('elec_base') }}</div>
             <div class="fld"><label class="lbl">{{ t('e_peak') }}</label>{{ tin('elec_peak') }}</div>
             <div class="fld"><label class="lbl">{{ t('e_offpeak') }}</label>{{ tin('elec_offpeak') }}</div>
           </div>
+          <div class="wiz-chiprow" style="margin-top:4px">
+            {{ bchk('elec_bill', t('e_bill')) }}
+            {{ bchk('elec_profile', t('e_profile')) }}
+          </div>
 
-          <div class="wiz-fieldnote">{{ t('e_source') }}</div>
-          <div class="wiz-chiprow" style="align-items:center">
+          <div class="wiz-fieldnote" style="margin-top:14px">{{ t('e_source') }}</div>
+          <div class="wiz-chiprow">
             {{ chk('elec_source','pea','PEA') }}
-            <span style="font-size:12.5px;color:var(--wz-muted)">{{ t('voltage') }}</span>
+            {{ chk('elec_source','mea','MEA') }}
+            {{ chk('elec_source','spp', t('src_spp')) }}
+            {{ chk('elec_source','self', t('src_self')) }}
+            {{ chk('elec_source','other', t('src_other')) }}
+          </div>
+          <div class="wiz-chiprow" id="peaExtra" style="align-items:center;margin-top:8px" hidden>
+            <span style="font-size:12.5px;color:var(--wz-muted)">PEA — {{ t('voltage') }}</span>
             {{ tin('pea_kv','','sm') }} <span style="font-size:12.5px;color:var(--wz-muted)">kV</span>
           </div>
-          <div class="wiz-chiprow" style="align-items:center;margin-top:8px">
-            {{ chk('elec_source','mea','MEA') }}
-            <span style="font-size:12.5px;color:var(--wz-muted)">{{ t('voltage') }}</span>
+          <div class="wiz-chiprow" id="meaExtra" style="align-items:center;margin-top:8px" hidden>
+            <span style="font-size:12.5px;color:var(--wz-muted)">MEA — {{ t('voltage') }}</span>
             {{ tin('mea_kv','','sm') }} <span style="font-size:12.5px;color:var(--wz-muted)">kV</span>
           </div>
-          <div class="wiz-chiprow" style="margin-top:8px">{{ chk('elec_source','spp', t('src_spp')) }}</div>
-          <div class="wiz-chiprow" style="align-items:center;margin-top:8px">
-            {{ chk('elec_source','self', t('src_self')) }}
-            <span style="font-size:12.5px;color:var(--wz-muted)">{{ t('self_mw') }}</span>
-            {{ tin('self_mw','','sm') }} MW
+          <div id="selfExtra" hidden>
+            <div class="wiz-chiprow" style="align-items:center;margin-top:8px">
+              <span style="font-size:12.5px;color:var(--wz-muted)">{{ t('self_mw') }}</span>
+              {{ tin('self_mw','','sm') }} MW
+            </div>
+            <div class="fld" style="margin-top:6px"><label class="lbl">{{ t('self_method') }}</label>{{ tin('self_method') }}</div>
           </div>
-          <div class="fld" style="margin-top:6px"><label class="lbl">{{ t('self_method') }}</label>{{ tin('self_method') }}</div>
-          <div class="wiz-chiprow" style="margin-top:8px">
-            {{ chk('elec_source','other', t('src_other')) }}
-            {{ tin('elec_source_other','','inline-input') }}
+          <div class="wiz-chiprow" id="elecOtherWrap" style="margin-top:8px" hidden>
+            {{ tin('elec_source_other', t('specify_ph'), 'inline-input') }}
           </div>
 
           <h3 class="wiz-subhead">{{ t('s42_head') }}</h3>
-          <div class="wiz-chiprow">{{ bchk('chiller_profile', t('c_profile')) }}</div>
-          <div class="wiz-grid2" style="margin-top:14px">
-            <div class="fld"><label class="lbl">{{ t('c_avg') }}</label>{{ tin('chiller_avg') }}</div>
-            <div class="fld"><label class="lbl">{{ t('c_base') }}</label>{{ tin('chiller_base') }}</div>
+          {% set chiller_has_data = data.get('chiller_avg') or data.get('chiller_base') or data.get('chiller1_rt') or data.get('chiller_profile') %}
+          <div id="wizChillerGroup" {% if not chiller_has_data %}hidden{% endif %}>
+            <div class="wiz-grid2">
+              <div class="fld"><label class="lbl">{{ t('c_avg') }}</label>{{ tin('chiller_avg') }}</div>
+              <div class="fld"><label class="lbl">{{ t('c_base') }}</label>{{ tin('chiller_base') }}</div>
+            </div>
+            <div class="wiz-chiprow" style="margin-bottom:8px">{{ bchk('chiller_profile', t('c_profile')) }}</div>
+            {% for c in range(1,4) %}
+            <div class="wiz-grid3" style="margin-top:6px">
+              <div class="fld"><label class="lbl">{{ t('c_no').format(n=c) }}</label>{{ tin('chiller'~c~'_rt') }}</div>
+              <div class="fld"><label class="lbl">{{ t('c_type') }}</label>{{ tin('chiller'~c~'_type') }}</div>
+              <div class="fld"><label class="lbl">{{ t('c_cop') }}</label>{{ tin('chiller'~c~'_cop') }}</div>
+            </div>
+            {% endfor %}
           </div>
-          {% for c in range(1,4) %}
-          <div class="wiz-grid3" style="margin-top:6px">
-            <div class="fld"><label class="lbl">{{ t('c_no').format(n=c) }}</label>{{ tin('chiller'~c~'_rt') }}</div>
-            <div class="fld"><label class="lbl">{{ t('c_type') }}</label>{{ tin('chiller'~c~'_type') }}</div>
-            <div class="fld"><label class="lbl">{{ t('c_cop') }}</label>{{ tin('chiller'~c~'_cop') }}</div>
-          </div>
-          {% endfor %}
+          <button type="button" class="wiz-add-machine" id="wizChillerToggle" {% if chiller_has_data %}hidden{% endif %}>{{ t('chiller_toggle') }}</button>
         </div>
 
         <!-- ================= STEP 5 : Compliance & consent ================= -->
@@ -426,6 +438,7 @@ const WIZ_I18N = {
   cardGasplan: {{ t('review_card_gasplan')|tojson }},
   cardElec: {{ t('review_card_elec')|tojson }},
   cardCompliance: {{ t('review_card_compliance')|tojson }},
+  addFuelBtn: {{ t('add_fuel_btn')|tojson }},
 };
 const REVIEW_I18N = {{ review_i18n|tojson }};
 const HAS_SERVER_DATA = {{ 'true' if data else 'false' }};

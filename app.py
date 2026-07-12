@@ -178,7 +178,9 @@ def pick_language():
 @app.context_processor
 def inject_translator():
     lang = session.get("lang", "th")
-    return {"t": make_t(lang), "lang": lang, "review_i18n": review_i18n(lang)}
+    has_logo = os.path.exists(os.path.join(BASE_DIR, "static", "logo.png"))
+    return {"t": make_t(lang), "lang": lang, "review_i18n": review_i18n(lang),
+            "has_logo": has_logo}
 
 
 def tr(key):

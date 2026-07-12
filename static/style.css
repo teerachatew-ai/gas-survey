@@ -184,25 +184,26 @@ table.list tr:hover td { background: #f0f6fc; }
    WIZARD — customer survey (/survey)
    ================================================================ */
 :root {
-  --wz-bg: #edf3f9;
+  --wz-bg: #eef5f9;
   --wz-surface: #ffffff;
-  --wz-surface-2: #f4f8fc;
-  --wz-ink: #14273c;
+  --wz-surface-2: #f3f9fb;
+  --wz-ink: #142334;
   --wz-muted: #5a7189;
-  --wz-brand: #0057a8;
-  --wz-brand-deep: #003b71;
-  --wz-accent: #00b3a4;
-  --wz-accent-soft: #e0f6f3;
-  --wz-line: #d5e1ec;
+  --wz-brand: #0072b2;
+  --wz-brand-deep: #1b1464;
+  --wz-accent: #00948d;
+  --wz-accent-soft: #dff5f3;
+  --wz-line: #d7e4ec;
   --wz-good: #17a45f;
   --wz-danger: #c0392b;
+  --wz-logo-red: #ed1c24;
   --wz-shadow: 0 3px 16px rgba(0, 50, 100, .10);
   --wz-shadow-lg: 0 14px 40px rgba(0, 50, 100, .14);
 }
 body.wizard-body {
   background:
-    radial-gradient(900px 500px at 15% -10%, rgba(0, 179, 164, .10), transparent 60%),
-    radial-gradient(900px 600px at 100% 0%, rgba(0, 87, 168, .10), transparent 55%),
+    radial-gradient(900px 500px at 15% -10%, rgba(0, 148, 141, .09), transparent 60%),
+    radial-gradient(900px 600px at 100% 0%, rgba(0, 169, 224, .12), transparent 55%),
     var(--wz-bg);
   min-height: 100vh;
 }
@@ -211,7 +212,7 @@ body.wizard-body {
 /* top bar: logo lockup + language switch */
 .wiz-topbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 18px; }
 .wiz-lockup { display: flex; align-items: center; gap: 10px; }
-.wiz-lockup svg { width: 38px; height: 38px; filter: drop-shadow(0 4px 10px rgba(0, 100, 120, .25)); }
+.wiz-lockup svg { width: 31px; height: 40px; filter: drop-shadow(0 3px 8px rgba(0, 60, 90, .22)); }
 .wiz-lockup .nm { font-weight: 800; font-size: 15px; color: var(--wz-brand-deep); letter-spacing: .02em; line-height: 1.15; }
 .wiz-lockup .nm small { display: block; font-weight: 500; font-size: 9px; color: var(--wz-muted); letter-spacing: .09em; }
 .wiz-langswitch { display: flex; gap: 2px; background: var(--wz-surface); border: 1px solid var(--wz-line); border-radius: 999px; padding: 3px; box-shadow: var(--wz-shadow); }
@@ -222,8 +223,8 @@ body.wizard-body {
 .wiz-card { background: var(--wz-surface); border: 1px solid var(--wz-line); border-radius: 20px; box-shadow: var(--wz-shadow-lg); overflow: hidden; }
 .wiz-card-head {
   background:
-    radial-gradient(120% 200% at 90% -40%, rgba(0, 200, 180, .5) 0%, transparent 55%),
-    linear-gradient(125deg, #003b71 0%, #0057a8 55%, #0a6fc4 100%);
+    radial-gradient(120% 200% at 90% -40%, rgba(0, 180, 220, .45) 0%, transparent 55%),
+    linear-gradient(125deg, #1b1464 0%, #0072b2 55%, #00a9e0 100%);
   color: #fff; padding: 18px 22px 16px; position: relative; overflow: hidden;
 }
 .wiz-card-head .flame-wm { position: absolute; right: -16px; bottom: -26px; width: 120px; height: 120px; opacity: .12; transform: rotate(8deg); }
@@ -264,7 +265,7 @@ body.wizard-body {
 /* welcome + success screens reuse .step-panel behaviour but centred */
 #wizWelcome, #wizSuccess { display: none; animation: wzFade .3s ease; text-align: center; padding: 6px 4px 4px; }
 #wizWelcome.active, #wizSuccess.active { display: block; }
-#wizWelcome .mark, #wizSuccess .mark { width: 68px; height: 68px; margin: 4px auto 14px; filter: drop-shadow(0 8px 18px rgba(0, 130, 150, .3)); }
+#wizWelcome .mark, #wizSuccess .mark { width: 54px; height: 70px; margin: 4px auto 14px; filter: drop-shadow(0 8px 18px rgba(0, 90, 120, .3)); }
 #wizWelcome h2 { font-size: 19px; color: var(--wz-brand-deep); margin: 0 0 4px; text-wrap: balance; }
 .wiz-time-chip {
   display: inline-flex; align-items: center; gap: 6px; margin: 10px 0 18px;
@@ -352,6 +353,27 @@ table.wiz-table input[type=text] { padding: 6px 7px; border-radius: 7px; text-al
   white-space: nowrap; margin-top: 4px;
 }
 
+/* fuel groups + quick-fill */
+.wiz-fuel-group[hidden] { display: none; }
+.wiz-quickbox {
+  margin-top: 12px; padding: 13px 14px;
+  background: var(--wz-accent-soft); border: 1.5px solid color-mix(in srgb, var(--wz-accent) 40%, var(--wz-line));
+  border-radius: 14px;
+}
+.wiz-detail-toggle {
+  display: block; width: 100%; margin-top: 14px; text-align: left;
+  font-size: 13px; font-weight: 700; color: var(--wz-brand);
+  background: transparent; border: 0; cursor: pointer; font-family: inherit; padding: 6px 2px;
+}
+.wiz-detail-toggle .tri { display: inline-block; transition: transform .2s; }
+.wiz-detail-toggle[aria-expanded="true"] .tri { transform: rotate(90deg); }
+#wizExpansionGroup[hidden], #wizChillerGroup[hidden], #wizMonthDetail[hidden] { display: none; }
+.wiz-chiprow[hidden], .wiz-optgrid[hidden], .wiz-grid2[hidden], .wiz-grid3[hidden] { display: none; }
+
+/* real logo file (static/logo.png) when present */
+.wiz-logo-img { height: 42px; width: auto; display: block; }
+.wiz-logo-img.welcome-logo { height: 72px; margin: 4px auto 14px; filter: drop-shadow(0 6px 14px rgba(0, 90, 120, .18)); }
+
 /* machine boxes */
 .wiz-machine-box { border: 1.5px solid var(--wz-line); border-radius: 14px; padding: 14px; margin-top: 10px; background: var(--wz-surface-2); }
 .wiz-machine-box h4 { margin: 0 0 10px; color: var(--wz-brand-deep); font-size: 14px; }
@@ -404,12 +426,15 @@ table.wiz-table input[type=text] { padding: 6px 7px; border-radius: 7px; text-al
 .wiz-autosave svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2.5; vertical-align: -1px; }
 
 .wiz-footnote { font-size: 11px; color: var(--wz-muted); margin: 16px 6px 0; line-height: 1.6; text-align: center; }
+.wizard-body .btn.teal { background: var(--wz-accent); }
+.wizard-body .btn.teal:hover { background: var(--wz-brand-deep); }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --wz-bg: #0b1725; --wz-surface: #142839; --wz-surface-2: #1a3145;
-    --wz-ink: #e9f1f8; --wz-muted: #91a8bd; --wz-brand: #4da3ee; --wz-brand-deep: #85c1f5;
-    --wz-accent: #2fd0bf; --wz-accent-soft: #123f3b; --wz-line: #28425c; --wz-good: #3ecb84;
+    --wz-ink: #e9f1f8; --wz-muted: #91a8bd; --wz-brand: #34a8e0; --wz-brand-deep: #7fd0f2;
+    --wz-accent: #22c3b6; --wz-accent-soft: #103832; --wz-line: #28425c; --wz-good: #3ecb84;
+    --wz-logo-red: #ff5a52;
   }
 }
 @media (prefers-reduced-motion: reduce) {
