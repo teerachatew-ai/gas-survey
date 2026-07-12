@@ -251,6 +251,100 @@ TEXTS = {
         "zh": "我们的工作人员将尽快与您联系。",
     },
     "th_again": {"th": "กรอกแบบสอบถามใหม่อีกครั้ง", "en": "Fill in a new questionnaire", "zh": "再次填写问卷"},
+    "th_eta": {
+        "th": "วิศวกร PNGD จะติดต่อกลับภายใน 3 วันทำการ",
+        "en": "A PNGD engineer will contact you within 3 business days",
+        "zh": "PNGD工程师将在3个工作日内与您联系",
+    },
+
+    # ---------- wizard chrome ----------
+    "brand_short": {"th": "PTT NGD", "en": "PTT NGD", "zh": "PTT NGD"},
+    "brand_tagline": {
+        "th": "NATURAL GAS DISTRIBUTION",
+        "en": "NATURAL GAS DISTRIBUTION",
+        "zh": "天然气配送",
+    },
+    "welcome_kicker": {
+        "th": "แบบสอบถามความต้องการใช้พลังงานของโรงงาน",
+        "en": "Factories' Energy Consumption Questionnaire",
+        "zh": "工厂能源需求调查问卷",
+    },
+    "welcome_time_chip": {
+        "th": "ใช้เวลาเพียง ~5 นาที · 6 ขั้นตอน",
+        "en": "Takes about ~5 minutes · 6 steps",
+        "zh": "仅需约5分钟 · 共6个步骤",
+    },
+    "welcome_b1_title": {"th": "ออกแบบให้ตรงโรงงานของท่าน", "en": "Tailored to your plant", "zh": "为您的工厂量身定制"},
+    "welcome_b1_desc": {
+        "th": "วิศวกร PNGD ใช้คำตอบนี้ประเมินระบบก๊าซและต้นทุนที่เหมาะสมที่สุด",
+        "en": "PNGD engineers use your answers to design the right gas system and cost estimate.",
+        "zh": "PNGD工程师将根据您的回答评估最合适的供气系统与成本。",
+    },
+    "welcome_b2_title": {"th": "กรอกค้างไว้ได้ ไม่หาย", "en": "Save your progress", "zh": "可保存草稿，不会丢失"},
+    "welcome_b2_desc": {
+        "th": "ระบบบันทึกอัตโนมัติในเครื่องของท่าน กลับมากรอกต่อจากเดิมได้ทุกเมื่อ",
+        "en": "Your answers are auto-saved on this device — come back anytime to continue.",
+        "zh": "系统会自动在本设备保存草稿，您可以随时回来继续填写。",
+    },
+    "welcome_b3_title": {"th": "ข้อมูลปลอดภัย", "en": "Your data is protected", "zh": "信息安全有保障"},
+    "welcome_b3_desc": {
+        "th": "คุ้มครองตามนโยบาย PDPA และใช้เพื่อการเสนอบริการเท่านั้น",
+        "en": "Protected under our PDPA policy and used only to prepare your service proposal.",
+        "zh": "依据PDPA政策予以保护，仅用于为您准备服务方案。",
+    },
+    "start_btn": {"th": "เริ่มกรอกแบบสอบถาม", "en": "Start the questionnaire", "zh": "开始填写问卷"},
+
+    "step_name_1": {"th": "ข้อมูลบริษัท", "en": "Company info", "zh": "公司信息"},
+    "step_name_2": {"th": "เชื้อเพลิงปัจจุบัน", "en": "Current fuel", "zh": "当前燃料"},
+    "step_name_3": {"th": "แผนใช้ก๊าซ", "en": "Gas plan", "zh": "用气计划"},
+    "step_name_4": {"th": "ไฟฟ้า & ความเย็น", "en": "Electricity & chiller", "zh": "电力与制冷"},
+    "step_name_5": {"th": "การยินยอม", "en": "Consent", "zh": "同意条款"},
+    "step_name_6": {"th": "ตรวจทาน & ส่ง", "en": "Review & submit", "zh": "核对并提交"},
+
+    "cheer_1": {"th": "เริ่มกันเลย!", "en": "Let's get started!", "zh": "开始吧！"},
+    "cheer_2": {"th": "", "en": "", "zh": ""},
+    "cheer_3": {"th": "ครึ่งทางแล้ว!", "en": "Halfway there!", "zh": "已完成一半！"},
+    "cheer_4": {"th": "อีกนิดเดียว!", "en": "Almost done!", "zh": "快好了！"},
+    "cheer_5": {"th": "ขั้นสุดท้ายก่อนสรุป", "en": "Last step before review", "zh": "最后一步，即将完成"},
+    "cheer_6": {"th": "เสร็จแล้ว!", "en": "All set!", "zh": "全部完成！"},
+
+    "step_of": {"th": "ขั้นที่ {n}/6", "en": "Step {n}/6", "zh": "第{n}/6步"},
+    "btn_back": {"th": "ย้อนกลับ", "en": "Back", "zh": "上一步"},
+    "btn_next": {"th": "ถัดไป", "en": "Next", "zh": "下一步"},
+    "btn_confirm_send": {"th": "ยืนยันและส่ง", "en": "Confirm & Submit", "zh": "确认并提交"},
+    "autosave_text": {"th": "บันทึกอัตโนมัติแล้ว", "en": "Auto-saved", "zh": "已自动保存"},
+
+    "copy_all_months": {"th": "⤓ ใช้ค่านี้กับทั้ง 12 เดือน", "en": "⤓ Copy to all 12 months", "zh": "⤓ 应用到全部12个月"},
+    "copy_all_hint": {"th": "แล้วค่อยแก้เดือนที่ต่าง", "en": "You can still edit any month after", "zh": "之后仍可单独修改各月份"},
+
+    "add_machine_btn": {"th": "＋ เพิ่มเครื่องจักร", "en": "＋ Add another machine", "zh": "＋ 添加设备"},
+
+    "err_company_required": {
+        "th": "กรุณากรอกชื่อบริษัทก่อนไปต่อ",
+        "en": "Please enter your company name to continue",
+        "zh": "请先填写公司名称再继续",
+    },
+    "err_consent_required": {
+        "th": "กรุณาติ๊กยอมรับนโยบายก่อนไปต่อ",
+        "en": "Please accept the policy to continue",
+        "zh": "请先勾选同意政策再继续",
+    },
+
+    "review_title": {"th": "ตรวจทานคำตอบของท่าน", "en": "Review your answers", "zh": "核对您的答案"},
+    "review_hint": {
+        "th": "กด \"แก้ไข\" เพื่อกลับไปแก้ขั้นนั้นได้ทันที",
+        "en": "Tap \"Edit\" to jump back and change any step",
+        "zh": "点击“编辑”即可返回修改对应步骤",
+    },
+    "review_edit": {"th": "แก้ไข", "en": "Edit", "zh": "编辑"},
+    "review_empty": {"th": "ยังไม่ได้กรอก", "en": "Not filled in", "zh": "尚未填写"},
+    "review_card_company": {"th": "บริษัท", "en": "Company", "zh": "公司"},
+    "review_card_fuel": {"th": "เชื้อเพลิงปัจจุบัน", "en": "Current fuel", "zh": "当前燃料"},
+    "review_card_gasplan": {"th": "แผนใช้ก๊าซ", "en": "Gas plan", "zh": "用气计划"},
+    "review_card_elec": {"th": "ไฟฟ้า", "en": "Electricity", "zh": "电力"},
+    "review_card_compliance": {"th": "Compliance & Sanctions", "en": "Compliance & Sanctions", "zh": "合规与制裁"},
+    "review_consent_yes": {"th": "ยินยอมแล้ว", "en": "Consent given", "zh": "已同意"},
+    "review_consent_no": {"th": "ยังไม่ได้ยินยอม", "en": "Not yet accepted", "zh": "尚未同意"},
 }
 
 
@@ -261,3 +355,23 @@ def make_t(lang):
             return key
         return entry.get(lang) or entry["th"]
     return t
+
+
+# label maps the wizard's JS review step needs to translate raw field values
+# (e.g. "fuel_oil") into on-screen text, keyed by the same value the form posts.
+REVIEW_KEY_MAP = {
+    "fuel_type": {"fuel_oil": "opt_fuel_oil", "lpg": "opt_lpg", "diesel": "opt_diesel",
+                  "natural_gas": "opt_ng", "other": "opt_other"},
+    "unit": {"liter": "opt_liter", "kg": "opt_kg", "mmbtu": "opt_mmbtu", "other": "opt_other"},
+    "purpose": {"steam": "p_steam", "drying": "p_drying", "melting": "p_melting", "other": "p_other"},
+}
+
+
+def review_i18n(lang):
+    t = make_t(lang)
+    out = {}
+    for group, mapping in REVIEW_KEY_MAP.items():
+        out[group] = {k: t(v) for k, v in mapping.items()}
+    out["elec_source"] = {"pea": "PEA", "mea": "MEA", "spp": t("src_spp"),
+                           "self": t("src_self"), "other": t("src_other")}
+    return out

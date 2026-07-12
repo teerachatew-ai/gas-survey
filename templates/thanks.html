@@ -6,19 +6,57 @@
 <title>{{ t('th_title') }} | PTT NGD</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-<header class="brand">
-  <div class="logo">{{ t('brand') }}</div>
-  <h1>{{ t('th_title') }}</h1>
-  <div class="sub">{{ t('th_sub') }}</div>
-</header>
-<div class="wrap" style="text-align:center">
-  <section class="card"><div class="card-body">
-    <p style="font-size:17px">{{ t('th_msg') }}
-    {% if ref %}<br>{{ t('th_ref') }} <strong>#{{ '%04d' % ref|int }}</strong>{% endif %}</p>
-    <p>{{ t('th_contact') }}</p>
-    <a class="btn teal" href="{{ url_for('survey') }}">{{ t('th_again') }}</a>
-  </div></section>
+<body class="wizard-body">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="wzFlameGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a6fd0"/><stop offset="1" stop-color="#00c2b0"/>
+    </linearGradient>
+  </defs>
+  <symbol id="wz-logo" viewBox="0 0 48 48">
+    <rect width="48" height="48" rx="13" fill="url(#wzFlameGrad)"/>
+    <path d="M24 8 C27.5 13.5 34 17.5 34 25.5 A10 10 0 1 1 14 25.5 C14 17.5 20.5 13.5 24 8 Z" fill="#fff"/>
+    <path d="M24 20.5 C25.8 23.2 29 24.8 29 28.6 A5 5 0 1 1 19 28.6 C19 24.8 22.2 23.2 24 20.5 Z" fill="#63e0d2"/>
+  </symbol>
+</svg>
+
+<div class="wiz-wrap">
+  <div class="wiz-topbar">
+    <div class="wiz-lockup">
+      <svg width="38" height="38"><use href="#wz-logo"/></svg>
+      <div class="nm">{{ t('brand_short') }}<small>{{ t('brand_tagline') }}</small></div>
+    </div>
+  </div>
+
+  <div class="wiz-card">
+    <div class="wiz-card-head">
+      <svg class="flame-wm" viewBox="0 0 24 24"><path d="M12 3c3 4 6 6.5 6 10a6 6 0 1 1-12 0c0-3.5 3-6 6-10z" fill="#fff"/></svg>
+      <h1>{{ t('th_sub') }}</h1>
+    </div>
+    <div class="wiz-screen" style="padding:26px 22px 30px">
+      <div id="wizSuccess" class="active">
+        <svg class="wiz-ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="41"/><path d="M33 51l11 11 23-24"/></svg>
+        <h2>{{ t('th_title') }}</h2>
+        <p style="font-size:13.5px;color:var(--wz-muted);margin:6px 0 0">{{ t('th_msg') }}</p>
+
+        {% if ref %}
+        <div class="wiz-refcard">
+          {{ t('th_ref') }}
+          <b>#{{ '%04d' % ref|int }}</b>
+        </div>
+        {% endif %}
+
+        <p style="font-size:13.5px;color:var(--wz-ink);margin:14px 0 4px;font-weight:600">{{ t('th_eta') }}</p>
+        <p style="font-size:12.5px;color:var(--wz-muted);margin:0 0 22px">{{ t('th_contact') }}</p>
+
+        <a class="btn teal" href="{{ url_for('survey') }}" style="border-radius:12px">{{ t('th_again') }}</a>
+      </div>
+    </div>
+  </div>
 </div>
+
+<script>
+try { localStorage.removeItem("pngd_survey_draft_v1"); } catch (e) { /* ignore */ }
+</script>
 </body>
 </html>

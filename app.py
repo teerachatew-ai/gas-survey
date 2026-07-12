@@ -16,7 +16,7 @@ from flask import (Flask, g, redirect, render_template, request, send_file,
 import io
 
 from pdf_filler import fill_pdf
-from translations import LANGS, make_t
+from translations import LANGS, make_t, review_i18n
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -178,7 +178,7 @@ def pick_language():
 @app.context_processor
 def inject_translator():
     lang = session.get("lang", "th")
-    return {"t": make_t(lang), "lang": lang}
+    return {"t": make_t(lang), "lang": lang, "review_i18n": review_i18n(lang)}
 
 
 def tr(key):
