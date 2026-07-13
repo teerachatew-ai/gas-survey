@@ -38,7 +38,8 @@
         <tr>
           <td>{{ '%04d' % r['id'] }}</td>
           <td>{{ r['created_at'] }}</td>
-          <td><a href="{{ url_for('admin_view', sid=r['id']) }}">{{ r['company_name'] or '-' }}</a></td>
+          <td><a href="{{ url_for('admin_view', sid=r['id']) }}">{{ r['company_name'] or '-' }}</a>
+            {% if r['attachments'] %}<span class="attach-badge" title="มีไฟล์แนบ {{ r['attachments'] }} ไฟล์">📎{{ r['attachments'] }}</span>{% endif %}</td>
           <td>{{ r['contact_person'] or '-' }}</td>
           <td>{{ r['email'] or '-' }}</td>
           <td>{% if r['pdpa'] %}<span class="pdpa-yes">&#10003; ยอมรับ</span>{% else %}<span class="pdpa-no">&#10007; ไม่มี</span>{% endif %}</td>

@@ -88,7 +88,7 @@
       <span class="wiz-cheer" id="wizCheer"></span>
     </div>
 
-    <form method="post" autocomplete="off" novalidate id="wizForm">
+    <form method="post" autocomplete="off" novalidate id="wizForm" enctype="multipart/form-data">
       <div class="wiz-screen">
 
         <!-- ================= WELCOME ================= -->
@@ -233,6 +233,17 @@
             </div>
             {% endfor %}
           </div>
+
+          <div class="wiz-upload">
+            <div class="wiz-fieldnote">{{ t('attach_fuel_label') }}</div>
+            <p class="wiz-inline-note" style="margin:2px 0 8px">{{ t('attach_hint') }}</p>
+            <label class="wiz-upload-btn">
+              <input type="file" name="fuel_attachments" id="fuelAttachInput"
+                     accept=".pdf,.jpg,.jpeg,.png,.webp,.gif,application/pdf,image/*" multiple hidden>
+              {{ icon('clip') }} {{ t('attach_choose') }}
+            </label>
+            <div class="wiz-file-list" id="fuelFileList"></div>
+          </div>
         </div>
 
         <!-- ================= STEP 3 : Energy usage ================= -->
@@ -306,6 +317,17 @@
           {% endfor %}
           <button type="button" class="wiz-add-machine" id="wizAddMachine">{{ t('add_machine_btn') }}</button>
           <p class="wiz-why" style="margin-top:10px">{{ t('s33_note')|safe }}</p>
+
+          <div class="wiz-upload">
+            <div class="wiz-fieldnote">{{ t('attach_machine_label') }}</div>
+            <p class="wiz-inline-note" style="margin:2px 0 8px">{{ t('attach_hint') }}</p>
+            <label class="wiz-upload-btn">
+              <input type="file" name="machine_attachments" id="machineAttachInput"
+                     accept=".pdf,.jpg,.jpeg,.png,.webp,.gif,application/pdf,image/*" multiple hidden>
+              {{ icon('clip') }} {{ t('attach_choose') }}
+            </label>
+            <div class="wiz-file-list" id="machineFileList"></div>
+          </div>
         </div>
 
         <!-- ================= STEP 4 : Electricity & chiller ================= -->
@@ -428,6 +450,12 @@ const WIZ_I18N = {
   cardElec: {{ t('review_card_elec')|tojson }},
   cardCompliance: {{ t('review_card_compliance')|tojson }},
   addFuelBtn: {{ t('add_fuel_btn')|tojson }},
+  attachRemove: {{ t('attach_remove')|tojson }},
+  attachErrType: {{ t('attach_err_type')|tojson }},
+  attachErrSize: {{ t('attach_err_size')|tojson }},
+  attachCount: {{ t('attach_count')|tojson }},
+  attachNone: {{ t('attach_none')|tojson }},
+  cardAttachments: {{ t('review_card_attachments')|tojson }},
 };
 const REVIEW_I18N = {{ review_i18n|tojson }};
 const HAS_SERVER_DATA = {{ 'true' if data else 'false' }};

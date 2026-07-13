@@ -37,6 +37,17 @@ ADMIN_PASSWORD = os.environ.get("SURVEY_ADMIN_PASSWORD", "pngd@2026")
 app = Flask(__name__)
 app.secret_key = os.environ.get("SURVEY_SECRET_KEY", "pngd-sl-fo-014-09-secret")
 
+# ---------------------------------------------------------------- attachments
+# Stored as blobs in the database (not local disk) so they survive Render's
+# ephemeral filesystem across deploys/restarts.
+ALLOWED_ATTACHMENT_MIME = {
+    "application/pdf",
+    "image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif",
+}
+ALLOWED_ATTACHMENT_EXT = {".pdf", ".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic", ".heif"}
+MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024  # 10 MB per file
+app.config["MAX_CONTENT_LENGTH"] = 60 * 1024 * 1024  # generous cap for the whole request
+
 # ---------------------------------------------------------------- database
 
 def get_db():
@@ -102,6 +113,18 @@ def init_db():
                     data TEXT NOT NULL
                 )
             """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS attachments (
+                    id SERIAL PRIMARY KEY,
+                    submission_id INTEGER NOT NULL,
+                    category TEXT NOT NULL,
+                    filename TEXT NOT NULL,
+                    mimetype TEXT NOT NULL,
+                    size_bytes INTEGER NOT NULL,
+                    data BYTEA NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+            """)
         conn.close()
     else:
         with sqlite3.connect(DB_PATH) as db:
@@ -115,9 +138,79 @@ def init_db():
                     data TEXT NOT NULL
                 )
             """)
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS attachments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    submission_id INTEGER NOT NULL,
+                    category TEXT NOT NULL,
+                    filename TEXT NOT NULL,
+                    mimetype TEXT NOT NULL,
+                    size_bytes INTEGER NOT NULL,
+                    data BLOB NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+            """)
 
 
 init_db()
+
+
+def _attachment_allowed(fs):
+    if not fs or not fs.filename:
+        return False
+    ext = os.path.splitext(fs.filename)[1].lower()
+    if ext not in ALLOWED_ATTACHMENT_EXT:
+        return False
+    if fs.mimetype and fs.mimetype not in ALLOWED_ATTACHMENT_MIME:
+        return False
+    return True
+
+
+def save_attachments(submission_id, category, files):
+    """Validate + store uploaded files as blobs. Silently skips anything
+    that fails validation — attachments are optional supporting documents,
+    not required fields, so a bad file shouldn't block the submission."""
+    db = get_db()
+    saved = 0
+    for fs in files:
+        if not _attachment_allowed(fs):
+            continue
+        blob = fs.read()
+        if not blob or len(blob) > MAX_ATTACHMENT_BYTES:
+            continue
+        filename = os.path.basename(fs.filename)[:200]
+        mimetype = fs.mimetype or "application/octet-stream"
+        created = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if USE_PG:
+            with db.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO attachments"
+                    " (submission_id, category, filename, mimetype, size_bytes, data, created_at)"
+                    " VALUES (%s,%s,%s,%s,%s,%s,%s)",
+                    (submission_id, category, filename, mimetype, len(blob),
+                     psycopg2.Binary(blob), created))
+            db.commit()
+        else:
+            db.execute(
+                "INSERT INTO attachments"
+                " (submission_id, category, filename, mimetype, size_bytes, data, created_at)"
+                " VALUES (?,?,?,?,?,?,?)",
+                (submission_id, category, filename, mimetype, len(blob), blob, created))
+            db.commit()
+        saved += 1
+    return saved
+
+
+def list_attachments(submission_id):
+    return db_execute(
+        "SELECT id, category, filename, mimetype, size_bytes, created_at FROM attachments"
+        " WHERE submission_id = ? ORDER BY category, id", (submission_id,), fetch="all")
+
+
+def get_attachment(aid, submission_id):
+    return db_execute(
+        "SELECT * FROM attachments WHERE id = ? AND submission_id = ?",
+        (aid, submission_id), fetch="one")
 
 # ---------------------------------------------------------------- form fields
 
@@ -211,6 +304,8 @@ def survey():
              data["company_name"], data["contact_person"], data["email"],
              json.dumps(data, ensure_ascii=False)),
             returning_id=True)
+        save_attachments(new_id, "fuel", request.files.getlist("fuel_attachments"))
+        save_attachments(new_id, "machine", request.files.getlist("machine_attachments"))
         return redirect(url_for("thanks", ref=new_id))
     return render_template("survey.html", data={})
 
@@ -261,13 +356,18 @@ def admin_list():
         rows = db_execute(
             "SELECT id, created_at, company_name, contact_person, email, data FROM submissions"
             " ORDER BY id DESC", fetch="all")
+    counts = db_execute(
+        "SELECT submission_id, COUNT(*) AS cnt FROM attachments GROUP BY submission_id",
+        fetch="all")
+    count_map = {c["submission_id"]: c["cnt"] for c in counts}
     items = []
     for r in rows:
         d = json.loads(r["data"])
         items.append({"id": r["id"], "created_at": r["created_at"],
                       "company_name": r["company_name"],
                       "contact_person": r["contact_person"], "email": r["email"],
-                      "pdpa": bool(d.get("pdpa_accept"))})
+                      "pdpa": bool(d.get("pdpa_accept")),
+                      "attachments": count_map.get(r["id"], 0)})
     return render_template("admin_list.html", rows=items, q=q)
 
 
@@ -282,7 +382,23 @@ def _load_submission(sid):
 @login_required
 def admin_view(sid):
     row, data = _load_submission(sid)
-    return render_template("admin_view.html", row=row, d=data)
+    attachments = list_attachments(sid)
+    fuel_files = [a for a in attachments if a["category"] == "fuel"]
+    machine_files = [a for a in attachments if a["category"] == "machine"]
+    return render_template("admin_view.html", row=row, d=data,
+                           fuel_files=fuel_files, machine_files=machine_files)
+
+
+@app.route("/admin/<int:sid>/attachment/<int:aid>")
+@login_required
+def admin_attachment(sid, aid):
+    row = get_attachment(aid, sid)
+    if row is None:
+        abort(404)
+    blob = bytes(row["data"])
+    return send_file(io.BytesIO(blob), mimetype=row["mimetype"],
+                     as_attachment=bool(request.args.get("download")),
+                     download_name=row["filename"])
 
 
 @app.route("/admin/<int:sid>/staff", methods=["POST"])
@@ -312,6 +428,7 @@ def admin_pdf(sid):
 @app.route("/admin/<int:sid>/delete", methods=["POST"])
 @login_required
 def admin_delete(sid):
+    db_execute("DELETE FROM attachments WHERE submission_id = ?", (sid,))
     db_execute("DELETE FROM submissions WHERE id = ?", (sid,))
     flash(f"ลบรายการ #{sid} แล้ว")
     return redirect(url_for("admin_list"))

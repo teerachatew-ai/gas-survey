@@ -17,6 +17,8 @@
   const STEP_ICONS = ["building", "flame", "gauge", "bolt", "shield", "clip"];
   const DRAFT_KEY = "pngd_survey_draft_v1";
   const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const ATTACH_EXT = [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic", ".heif"];
+  const ATTACH_MAX_BYTES = 10 * 1024 * 1024;
 
   const form = document.getElementById("wizForm");
   const welcome = document.getElementById("wizWelcome");
@@ -249,6 +251,87 @@
     refreshAddMachineVisibility();
   });
 
+  // ------------------------------------------------------------ file attachments
+  function fmtSize(bytes) {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  }
+  function fileIcon(f) {
+    return f.type === "application/pdf" || /\.pdf$/i.test(f.name)
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5.5-5.5L4 21"/></svg>';
+  }
+
+  function setupFileUpload(inputId, listId) {
+    const input = document.getElementById(inputId);
+    const list = document.getElementById(listId);
+    if (!input || !list) return;
+
+    function render() {
+      const files = Array.from(input.files || []);
+      list.innerHTML = files.map((f, i) => `
+        <div class="wiz-file-chip" data-idx="${i}">
+          <span class="fic">${fileIcon(f)}</span>
+          <span class="fname">${f.name}</span>
+          <span class="fsize">${fmtSize(f.size)}</span>
+          <button type="button" class="fremove" data-idx="${i}" aria-label="${WIZ_I18N.attachRemove}">&times;</button>
+        </div>`).join("");
+    }
+
+    function setFiles(files) {
+      const dt = new DataTransfer();
+      files.forEach(f => dt.items.add(f));
+      input.files = dt.files;
+    }
+
+    input.addEventListener("change", () => {
+      const incoming = Array.from(input.files || []);
+      const errs = [];
+      const kept = incoming.filter(f => {
+        const ext = "." + (f.name.split(".").pop() || "").toLowerCase();
+        if (!ATTACH_EXT.includes(ext)) {
+          errs.push(WIZ_I18N.attachErrType.replace("{name}", f.name));
+          return false;
+        }
+        if (f.size > ATTACH_MAX_BYTES) {
+          errs.push(WIZ_I18N.attachErrSize.replace("{name}", f.name));
+          return false;
+        }
+        return true;
+      });
+      if (errs.length) {
+        let errEl = list.nextElementSibling;
+        if (!errEl || !errEl.classList.contains("wiz-file-err")) {
+          errEl = document.createElement("div");
+          errEl.className = "wiz-file-err";
+          list.after(errEl);
+        }
+        errEl.innerHTML = errs.join("<br>");
+        setFiles(kept);
+      } else {
+        const prevErr = list.nextElementSibling;
+        if (prevErr && prevErr.classList.contains("wiz-file-err")) prevErr.remove();
+      }
+      render();
+    });
+
+    list.addEventListener("click", (e) => {
+      const btn = e.target.closest(".fremove");
+      if (!btn) return;
+      const idx = Number(btn.dataset.idx);
+      const remaining = Array.from(input.files || []).filter((_, i) => i !== idx);
+      setFiles(remaining);
+      render();
+    });
+  }
+  setupFileUpload("fuelAttachInput", "fuelFileList");
+  setupFileUpload("machineAttachInput", "machineFileList");
+  function attachCount(inputId) {
+    const el = document.getElementById(inputId);
+    return el && el.files ? el.files.length : 0;
+  }
+
   // ------------------------------------------------------------ expansion / chiller toggles
   const expToggle = document.getElementById("wizExpansionToggle");
   const expGroup = document.getElementById("wizExpansionGroup");
@@ -264,6 +347,7 @@
     const fd = new FormData(form);
     const obj = {};
     for (const [k, v] of fd.entries()) {
+      if (v instanceof File) continue; // files can't survive localStorage — re-attach after reload
       if (obj[k] === undefined) obj[k] = v;
       else if (Array.isArray(obj[k])) obj[k].push(v);
       else obj[k] = [obj[k], v];
@@ -372,11 +456,15 @@
       ? WIZ_I18N.reviewConsentYes + (signer ? " · " + signer : "")
       : WIZ_I18N.reviewConsentNo;
 
+    const totalFiles = attachCount("fuelAttachInput") + attachCount("machineAttachInput");
+    const filesLine = totalFiles ? WIZ_I18N.attachCount.replace("{n}", totalFiles) : WIZ_I18N.attachNone;
+
     reviewCards.innerHTML =
       card("building", WIZ_I18N.cardCompany, company, 1, false) +
       card("flame", WIZ_I18N.cardFuel, fuelLine, 2, false) +
       card("gauge", WIZ_I18N.cardGasplan, gasLine, 3, false) +
       card("bolt", WIZ_I18N.cardElec, elecLine, 4, false) +
+      card("clip", WIZ_I18N.cardAttachments, filesLine, 2, false) +
       card("shield", WIZ_I18N.cardCompliance, complianceLine, 5, consentOk);
   }
 

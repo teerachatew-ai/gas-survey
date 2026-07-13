@@ -8,6 +8,28 @@
 </head>
 <body>
 {% macro v(key) -%}{{ d.get(key) or '-' }}{%- endmacro %}
+{% macro attach_grid(files) -%}
+  {% if files %}
+  <div class="attach-grid">
+    {% for a in files %}
+    <div class="attach-item">
+      {% if a['mimetype'].startswith('image/') %}
+      <a href="{{ url_for('admin_attachment', sid=row['id'], aid=a['id']) }}" target="_blank">
+        <img src="{{ url_for('admin_attachment', sid=row['id'], aid=a['id']) }}" alt="{{ a['filename'] }}" class="attach-thumb">
+      </a>
+      {% else %}
+      <a class="attach-pdf" href="{{ url_for('admin_attachment', sid=row['id'], aid=a['id']) }}" target="_blank">PDF</a>
+      {% endif %}
+      <div class="attach-name" title="{{ a['filename'] }}">{{ a['filename'] }}</div>
+      <div class="attach-meta">{{ (a['size_bytes'] / 1024) | round(0, 'floor') | int }} KB</div>
+      <a class="btn small teal" href="{{ url_for('admin_attachment', sid=row['id'], aid=a['id'], download=1) }}">ดาวน์โหลด</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="color:#777;margin:0">ไม่มีไฟล์แนบ</p>
+  {% endif %}
+{%- endmacro %}
 <header class="brand">
   <div class="logo">PTT NGD — ระบบหลังบ้าน</div>
   <h1>แบบสอบถาม #{{ '%04d' % row['id'] }}</h1>
@@ -102,6 +124,8 @@
           </tbody>
         </table>
       </div>
+      <h3 class="sub-head" style="margin-top:14px">ไฟล์แนบ — บิล/ใบเสร็จเชื้อเพลิง</h3>
+      {{ attach_grid(fuel_files) }}
     </div>
   </section>
 
@@ -142,6 +166,8 @@
           </tbody>
         </table>
       </div>
+      <h3 class="sub-head" style="margin-top:14px">ไฟล์แนบ — รูป/สเปคเครื่องจักร</h3>
+      {{ attach_grid(machine_files) }}
     </div>
   </section>
 

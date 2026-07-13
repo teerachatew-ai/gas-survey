@@ -417,6 +417,45 @@ TEXTS = {
         "en": "Years are pre-filled — enter only the years you have plans for; leave the rest blank.",
         "zh": "年份已自动填写——只需填写有计划的年份，其余留空即可。",
     },
+
+    # ---------- file attachments ----------
+    "attach_fuel_label": {
+        "th": "แนบไฟล์บิล/ใบเสร็จเชื้อเพลิง (ถ้ามี)",
+        "en": "Attach fuel bills / receipts (optional)",
+        "zh": "附上燃料账单/收据（可选）",
+    },
+    "attach_machine_label": {
+        "th": "แนบรูปหรือสเปคเครื่องจักร (ถ้ามี)",
+        "en": "Attach machine photos or spec sheets (optional)",
+        "zh": "附上设备照片或规格表（可选）",
+    },
+    "attach_hint": {
+        "th": "รองรับไฟล์ PDF และรูปภาพ (JPG, PNG) ขนาดไม่เกิน 10MB ต่อไฟล์",
+        "en": "PDF and image files (JPG, PNG) accepted, up to 10MB each",
+        "zh": "支持PDF和图片文件（JPG、PNG），每个文件不超过10MB",
+    },
+    "attach_choose": {"th": "เลือกไฟล์", "en": "Choose files", "zh": "选择文件"},
+    "attach_remove": {"th": "ลบ", "en": "Remove", "zh": "移除"},
+    "attach_err_type": {
+        "th": "ไฟล์ \"{name}\" ไม่รองรับ (เฉพาะ PDF/JPG/PNG)",
+        "en": "\"{name}\" isn't supported (PDF/JPG/PNG only)",
+        "zh": "“{name}”格式不支持（仅限PDF/JPG/PNG）",
+    },
+    "attach_err_size": {
+        "th": "ไฟล์ \"{name}\" ใหญ่เกิน 10MB",
+        "en": "\"{name}\" is larger than 10MB",
+        "zh": "“{name}”超过10MB",
+    },
+    "review_card_attachments": {"th": "ไฟล์แนบ", "en": "Attachments", "zh": "附件"},
+    "attach_count": {"th": "{n} ไฟล์", "en": "{n} file(s)", "zh": "{n} 个文件"},
+    "attach_none": {"th": "ไม่มีไฟล์แนบ", "en": "No files attached", "zh": "无附件"},
+
+    # ---------- admin: attachments ----------
+    "adm_attach_fuel": {"th": "ไฟล์แนบ — เชื้อเพลิง", "en": "Attachments — Fuel", "zh": "附件 — 燃料"},
+    "adm_attach_machine": {"th": "ไฟล์แนบ — เครื่องจักร", "en": "Attachments — Machines", "zh": "附件 — 设备"},
+    "adm_attach_none": {"th": "ไม่มีไฟล์แนบ", "en": "No attachments", "zh": "无附件"},
+    "adm_attach_view": {"th": "ดู", "en": "View", "zh": "查看"},
+    "adm_attach_download": {"th": "ดาวน์โหลด", "en": "Download", "zh": "下载"},
 }
 
 
