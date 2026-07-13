@@ -386,22 +386,18 @@ table.wiz-table input[type=text] { padding: 6px 7px; border-radius: 7px; text-al
 .wiz-logo-img { height: 42px; width: auto; display: block; }
 .wiz-logo-img.welcome-logo { height: 72px; margin: 4px auto 14px; filter: drop-shadow(0 6px 14px rgba(0, 90, 120, .18)); }
 
-/* 2.2 future-years — vertical cards instead of a wide scrolling table */
-.wiz-year-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px;
-}
-.wiz-year-card {
-  border: 1.5px solid var(--wz-line); border-radius: 14px; padding: 12px 13px;
-  background: var(--wz-surface-2);
-}
-.wiz-year-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+/* 2.2 future-years — a narrow (Year / Consumption / Capacity) table with
+   years running down as rows, so it never needs horizontal scrolling */
+table.wiz-year-table { min-width: 0; }
+table.wiz-year-table th, table.wiz-year-table td { min-width: 0; }
+table.wiz-year-table input.wiz-year-cons, table.wiz-year-table input.wiz-year-cap { min-width: 0; width: 100%; }
+.wiz-year-row-label { display: flex; align-items: center; gap: 6px; justify-content: center; }
 .wiz-year-badge {
-  width: 24px; height: 24px; border-radius: 50%; flex: none;
-  background: var(--wz-brand); color: #fff; font-size: 12px; font-weight: 800;
+  width: 20px; height: 20px; border-radius: 50%; flex: none;
+  background: var(--wz-brand); color: #fff; font-size: 10.5px; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
 }
-.wiz-year-label { font-size: 12.5px; font-weight: 700; color: var(--wz-brand-deep); }
-.wiz-year-card .fld label.lbl { font-size: 11px; }
+.wiz-year-row-label input { width: 62px !important; }
 
 /* file attachments (fuel bills / machine photos) */
 .wiz-upload { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--wz-line); }

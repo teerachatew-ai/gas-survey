@@ -193,12 +193,12 @@
                 <thead>
                   <tr>
                     <th rowspan="2" style="min-width:76px">{{ t('tbl_month')|safe }}</th>
-                    {% for n in [1,2,3] %}<th colspan="2">{{ t('fuel_type_n').format(n=n) }}</th>{% endfor %}
+                    {% for n in [1,2,3] %}<th colspan="2" {% if n > 1 %}data-fuelcol="{{ n }}" hidden{% endif %}>{{ t('fuel_type_n').format(n=n) }}</th>{% endfor %}
                   </tr>
                   <tr>
                     {% for n in [1,2,3] %}
-                    <th>{{ t('tbl_cons') }}</th>
-                    <th>{{ t('tbl_price') }}</th>
+                    <th {% if n > 1 %}data-fuelcol="{{ n }}" hidden{% endif %}>{{ t('tbl_cons') }}</th>
+                    <th {% if n > 1 %}data-fuelcol="{{ n }}" hidden{% endif %}>{{ t('tbl_price') }}</th>
                     {% endfor %}
                   </tr>
                 </thead>
@@ -207,8 +207,8 @@
                   <tr>
                     <td>{{ tin('month_label_'~r, t('month_ph')) }}</td>
                     {% for n in [1,2,3] %}
-                    <td>{{ tin('fuel'~n~'_cons_'~r) }}</td>
-                    <td>{{ tin('fuel'~n~'_price_'~r) }}</td>
+                    <td {% if n > 1 %}data-fuelcol="{{ n }}" hidden{% endif %}>{{ tin('fuel'~n~'_cons_'~r) }}</td>
+                    <td {% if n > 1 %}data-fuelcol="{{ n }}" hidden{% endif %}>{{ tin('fuel'~n~'_price_'~r) }}</td>
                     {% endfor %}
                   </tr>
                   {% endfor %}
@@ -220,18 +220,30 @@
 
           <h3 class="wiz-subhead">{{ t('s22_head')|safe }}</h3>
           <p class="wiz-why" style="margin-bottom:8px">{{ t('future_hint') }}</p>
-          <div class="wiz-year-grid">
-            {% for y in range(1,8) %}
-            <div class="wiz-year-card">
-              <div class="wiz-year-card-head">
-                <span class="wiz-year-badge">{{ y }}</span>
-                <span class="wiz-year-label">{{ t('year_n').format(n=y, sfx=['1st','2nd','3rd','4th','5th','6th','7th'][y-1]) }}</span>
-              </div>
-              <div class="fld" style="margin-bottom:8px"><label class="lbl">{{ t('tbl_year') }}</label>{{ tin('year_'~y, t('year_ph'), 'sm') }}</div>
-              <div class="fld" style="margin-bottom:8px"><label class="lbl">{{ t('tbl_cons_yr') }}</label>{{ tin('cons_year_'~y) }}</div>
-              <div class="fld" style="margin-bottom:0"><label class="lbl">{{ t('tbl_cap_yr') }}</label>{{ tin('cap_year_'~y) }}</div>
-            </div>
-            {% endfor %}
+          <div class="wiz-fueltable-wrap">
+            <table class="wiz-table wiz-year-table">
+              <thead>
+                <tr>
+                  <th style="min-width:96px">{{ t('tbl_expected') }}</th>
+                  <th>{{ t('tbl_cons_yr') }}</th>
+                  <th>{{ t('tbl_cap_yr') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for y in range(1,8) %}
+                <tr>
+                  <td>
+                    <div class="wiz-year-row-label">
+                      <span class="wiz-year-badge">{{ y }}</span>
+                      {{ tin('year_'~y, t('year_ph'), 'sm') }}
+                    </div>
+                  </td>
+                  <td>{{ tin('cons_year_'~y, '', 'wiz-year-cons') }}</td>
+                  <td>{{ tin('cap_year_'~y, '', 'wiz-year-cap') }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
 
           <div class="wiz-upload">

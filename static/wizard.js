@@ -173,6 +173,9 @@
   // ------------------------------------------------------------ add fuel 2 / 3
   const addFuelBtn = document.getElementById("wizAddFuel");
   function fuelGroup(n) { return document.querySelector(`.wiz-fuel-group[data-fuel-group="${n}"]`); }
+  function setFuelColVisible(n, show) {
+    document.querySelectorAll(`[data-fuelcol="${n}"]`).forEach(el => { el.hidden = !show; });
+  }
   function refreshAddFuelBtn() {
     const nextHidden = [2, 3].find(n => fuelGroup(n).hidden);
     if (nextHidden) {
@@ -184,7 +187,7 @@
   }
   addFuelBtn.addEventListener("click", () => {
     const nextHidden = [2, 3].find(n => fuelGroup(n).hidden);
-    if (nextHidden) fuelGroup(nextHidden).hidden = false;
+    if (nextHidden) { fuelGroup(nextHidden).hidden = false; setFuelColVisible(nextHidden, true); }
     refreshAddFuelBtn();
   });
 
@@ -209,6 +212,18 @@
       if (price && !price.value) price.value = fieldVal(`fuel${n}_price_1`);
     });
   }
+
+  // year 1 -> auto-fill years 2-7 (user can still edit any year afterward)
+  function propagateYear(kind, value) {
+    for (let y = 2; y <= 7; y++) {
+      const el = form.elements[`${kind}_${y}`];
+      if (el) el.value = value;
+    }
+  }
+  const yearCons1 = form.elements["cons_year_1"];
+  const yearCap1 = form.elements["cap_year_1"];
+  if (yearCons1) yearCons1.addEventListener("input", () => { propagateYear("cons_year", yearCons1.value.trim()); scheduleSave(); });
+  if (yearCap1) yearCap1.addEventListener("input", () => { propagateYear("cap_year", yearCap1.value.trim()); scheduleSave(); });
 
   // month detail toggle
   const monthToggle = document.getElementById("wizMonthToggle");
@@ -394,7 +409,10 @@
   // reveal optional groups that already contain data (draft or server re-render)
   function revealGroupsWithData() {
     [2, 3].forEach(n => {
-      if (radioVal(`fuel${n}_type`) || fieldVal(`fuel${n}_cons_1`)) fuelGroup(n).hidden = false;
+      if (radioVal(`fuel${n}_type`) || fieldVal(`fuel${n}_cons_1`)) {
+        fuelGroup(n).hidden = false;
+        setFuelColVisible(n, true);
+      }
     });
     refreshAddFuelBtn();
 
