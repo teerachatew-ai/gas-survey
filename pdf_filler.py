@@ -47,7 +47,7 @@ class Overlay:
     def __init__(self, c):
         self.c = c
 
-    def text(self, x, bottom, value, size=8, max_w=None, lift=2.0):
+    def text(self, x, bottom, value, size=8, max_w=None, lift=4.5):
         value = (value or "").strip()
         if not value:
             return
@@ -152,7 +152,7 @@ def _page1(o, d):
     year_cx = [171.5, 235.0, 299.0, 362.5, 426.5, 490.0, 552.5]
     cons_cx2 = [160.7, 224.5, 288.0, 351.8, 415.6, 479.6, 542.1]
     for i in range(1, 8):
-        o.ctext(year_cx[i - 1], 690.7, _g(d, f"year_{i}"), size=7.5, max_w=28, lift=2.5)
+        o.ctext(year_cx[i - 1], 690.7, _g(d, f"year_{i}"), size=7.5, max_w=28, lift=4.5)
         o.ctext(cons_cx2[i - 1], 722.7, _g(d, f"cons_year_{i}"), max_w=60, lift=6)
         o.ctext(cons_cx2[i - 1], 745.9, _g(d, f"cap_year_{i}"), max_w=60, lift=6)
 
@@ -162,14 +162,14 @@ def _page1(o, d):
 def _page2(o, d):
     # 3.1 project and plan
     cur_cx, exp_cx = 353.9, 500.2
-    o.ctext(cur_cx, 130.6, _g(d, "product_current"), max_w=140, lift=2.5)
-    o.ctext(exp_cx, 130.6, _g(d, "product_expansion"), max_w=136, lift=2.5)
-    o.ctext(cur_cx, 144.1, _g(d, "startup_current"), max_w=140, lift=2.5)
-    o.ctext(exp_cx, 144.1, _g(d, "startup_expansion"), max_w=136, lift=2.5)
-    o.ctext(cur_cx, 157.6, _g(d, "ophour_current"), max_w=140, lift=2.5)
-    o.ctext(exp_cx, 157.6, _g(d, "ophour_expansion"), max_w=136, lift=2.5)
-    o.ctext(cur_cx, 171.1, _g(d, "opday_current"), max_w=140, lift=2.5)
-    o.ctext(exp_cx, 171.1, _g(d, "opday_expansion"), max_w=136, lift=2.5)
+    o.ctext(cur_cx, 130.6, _g(d, "product_current"), max_w=140, lift=4.5)
+    o.ctext(exp_cx, 130.6, _g(d, "product_expansion"), max_w=136, lift=4.5)
+    o.ctext(cur_cx, 144.1, _g(d, "startup_current"), max_w=140, lift=4.5)
+    o.ctext(exp_cx, 144.1, _g(d, "startup_expansion"), max_w=136, lift=4.5)
+    o.ctext(cur_cx, 157.6, _g(d, "ophour_current"), max_w=140, lift=4.5)
+    o.ctext(exp_cx, 157.6, _g(d, "ophour_expansion"), max_w=136, lift=4.5)
+    o.ctext(cur_cx, 171.1, _g(d, "opday_current"), max_w=140, lift=4.5)
+    o.ctext(exp_cx, 171.1, _g(d, "opday_expansion"), max_w=136, lift=4.5)
 
     # 3.2 natural-gas requirement
     o.text(180, 203.0, _g(d, "plant_location"), size=8, max_w=90)
