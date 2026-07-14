@@ -146,18 +146,6 @@ def fill_slfo009(data, out_path=None):
     o.check(293.1, 863.1, "slfo010_011_001" in purpose)
     o.check(767.85, 863.1, bool(data.get("attach_potential_demand")))
 
-    # ---------------- MRS & Construction Information ----------------
-    o.text(128, 1080.1, _g(data, "mrs_type"), max_w=202)
-    stock = _g(data, "mrs_in_stock")
-    o.check(443.0, 1080.5, stock == "available")
-    o.check(543.0, 1080.5, stock == "not_available")
-    o.text(707, 1080.1, _g(data, "mrs_no"), max_w=198)
-    o.text(178, 1104.5, _g(data, "outlet_pressure_barg"), max_w=127)
-    o.text(178, 1129.2, _g(data, "construction_period_days"), max_w=127)
-    o.check(138.6, 1154.3, bool(data.get("attach_construction_schedule")))
-    o.check(318.1, 1154.3, bool(data.get("attach_mrs_location_drawing")))
-    o.check(138.6, 1203.5, bool(data.get("mrs_renew_available")))
-
     c.showPage()
     c.save()
     buf.seek(0)

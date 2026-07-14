@@ -278,7 +278,6 @@ ISO009_TEXT_FIELDS = [
     "company_name", "area", "project_no", "revision_no", "form_date",
     "land_plot_address", "pipe_distance_m", "surveyor_name", "surveyor_date",
     "commissioning_date", "gas_consumption_mmbtu_yr",
-    "mrs_type", "mrs_no", "outlet_pressure_barg", "construction_period_days",
 ]
 for _r in (1, 2, 3):
     ISO009_TEXT_FIELDS += [f"mrs{_r}_pressure", f"mrs{_r}_max_flow"]
@@ -286,11 +285,9 @@ for _r in (1, 2, 3):
         ISO009_TEXT_FIELDS.append(f"mrs{_r}_year{_y}")
 
 ISO009_RADIO_FIELDS = ["factory_type", "pipe_within_500m", "gas_heating_zone",
-                        "estimate_scope", "connection_type", "mrs_in_stock"]
+                        "estimate_scope", "connection_type"]
 ISO009_MULTI_FIELDS = ["purpose"]
-ISO009_BOOL_FIELDS = ["attach_hardcopy", "attach_electronic", "attach_potential_demand",
-                       "attach_construction_schedule", "attach_mrs_location_drawing",
-                       "mrs_renew_available"]
+ISO009_BOOL_FIELDS = ["attach_hardcopy", "attach_electronic", "attach_potential_demand"]
 
 
 def collect_iso009_form(form):
@@ -564,6 +561,8 @@ def admin_iso_delete(doc_id):
     sid = row["submission_id"]
     db_execute("DELETE FROM iso_documents WHERE id = ?", (doc_id,))
     flash(f"ลบเอกสาร ISO #{doc_id} แล้ว")
+    if request.form.get("next") == "list":
+        return redirect(url_for("admin_iso_list"))
     return redirect(url_for("admin_view", sid=sid) if sid else url_for("admin_iso_list"))
 
 

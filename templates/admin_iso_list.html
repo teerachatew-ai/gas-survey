@@ -43,6 +43,11 @@
           <td>
             <a class="btn small" href="{{ url_for('admin_iso_edit', doc_id=r['id']) }}">เปิด</a>
             <a class="btn small teal" href="{{ url_for('admin_iso_pdf', doc_id=r['id'], download=1) }}">PDF</a>
+            <form method="post" action="{{ url_for('admin_iso_delete', doc_id=r['id']) }}" style="display:inline"
+                  onsubmit="return confirm('ยืนยันการลบเอกสาร {{ r['form_code'] }} #{{ r['id'] }} ?')">
+              <input type="hidden" name="next" value="list">
+              <button class="btn small red" type="submit">ลบ</button>
+            </form>
           </td>
         </tr>
         {% else %}

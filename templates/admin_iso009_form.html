@@ -167,33 +167,7 @@
     </div>
   </section>
 
-  <section class="card">
-    <h2>MRS &amp; Construction Information</h2>
-    <div class="card-body">
-      <div class="grid g2">
-        <label class="f"><span class="lbl">MRS Type</span>{{ tin('mrs_type') }}</label>
-        <label class="f"><span class="lbl">MRS No.</span>{{ tin('mrs_no') }}</label>
-      </div>
-      <div class="wiz-fieldnote" style="margin-top:10px">MRS in Stock</div>
-      <div class="wiz-chiprow">
-        {{ rad('mrs_in_stock','available','Available') }}
-        {{ rad('mrs_in_stock','not_available','Not available') }}
-      </div>
-      <div class="grid g2" style="margin-top:14px">
-        <label class="f"><span class="lbl">Outlet Pressure (Barg.)</span>{{ tin('outlet_pressure_barg') }}</label>
-        <label class="f"><span class="lbl">Period of Construction (Days)</span>{{ tin('construction_period_days') }}</label>
-      </div>
-      <div class="wiz-fieldnote" style="margin-top:10px">Attachment</div>
-      <div class="wiz-chiprow">
-        {{ bchk('attach_construction_schedule','Construction Schedule') }}
-        {{ bchk('attach_mrs_location_drawing','MRS Location Drawing') }}
-      </div>
-      <div class="wiz-chiprow" style="margin-top:8px">
-        {{ bchk('mrs_renew_available','MRS Renew Available (Additional)') }}
-      </div>
-      <p class="hint" style="margin-top:10px">หมายเหตุ: ตาราง Diameter/Maximum Flow และการลงนามวิศวกร (ส่วนพัฒนาระบบเครือข่าย) เป็นส่วนของวิศวกร ไม่รวมอยู่ในฟอร์มนี้</p>
-    </div>
-  </section>
+  <p class="hint" style="text-align:center;margin:10px 0 0">หมายเหตุ: ส่วน MRS &amp; Construction Information, ตาราง Diameter/Maximum Flow และการลงนามวิศวกร (ส่วนพัฒนาระบบเครือข่าย) เป็นส่วนของวิศวกร ไม่รวมอยู่ในฟอร์มนี้</p>
 
   <div class="submit-bar" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
     <button class="btn" type="submit">บันทึก</button>

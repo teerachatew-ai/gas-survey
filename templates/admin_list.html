@@ -32,7 +32,7 @@
   <section class="card" style="margin-top:14px">
     <table class="list">
       <thead>
-        <tr><th>#</th><th>วันที่ส่ง</th><th>บริษัท</th><th>ผู้ติดต่อ</th><th>อีเมล</th><th style="width:90px">PDPA</th><th style="width:230px">การจัดการ</th></tr>
+        <tr><th>#</th><th>วันที่ส่ง</th><th>บริษัท</th><th>ผู้ติดต่อ</th><th>อีเมล</th><th style="width:90px">PDPA</th><th style="width:290px">การจัดการ</th></tr>
       </thead>
       <tbody>
         {% for r in rows %}
@@ -47,6 +47,10 @@
           <td>
             <a class="btn small" href="{{ url_for('admin_view', sid=r['id']) }}">ดูข้อมูล</a>
             <a class="btn small teal" href="{{ url_for('admin_pdf', sid=r['id'], download=1) }}">ดาวน์โหลด PDF</a>
+            <form method="post" action="{{ url_for('admin_delete', sid=r['id']) }}" style="display:inline"
+                  onsubmit="return confirm('ยืนยันการลบแบบสอบถาม #{{ r['id'] }} (รวมเอกสาร ISO และไฟล์แนบทั้งหมด) ?')">
+              <button class="btn small red" type="submit">ลบ</button>
+            </form>
           </td>
         </tr>
         {% else %}
