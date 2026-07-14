@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ทะเบียนเอกสาร ISO | ระบบหลังบ้าน</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="brand">
+  <div class="logo">PTT NGD — ระบบหลังบ้าน</div>
+  <h1>ทะเบียนเอกสาร ISO (E-Document)</h1>
+  <div class="sub">เอกสารทั้งหมดที่สร้างจากทุกแฟ้มลูกค้า</div>
+</header>
+<div class="wrap">
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+{% endwith %}
+  <div class="topbar" style="margin-top:16px">
+    <div></div>
+    <div>
+      <a class="btn small" href="{{ url_for('admin_list') }}">รายการแบบสอบถาม</a>
+      <a class="btn small gray" href="{{ url_for('admin_logout') }}">ออกจากระบบ</a>
+    </div>
+  </div>
+
+  <section class="card" style="margin-top:14px">
+    <table class="list">
+      <thead>
+        <tr><th>#</th><th>ฟอร์ม</th><th>บริษัท</th><th>สถานะ</th><th>แก้ไขล่าสุด</th><th style="width:200px">การจัดการ</th></tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ '%04d' % r['id'] }}</td>
+          <td><b>{{ r['form_code'] }}</b></td>
+          <td>{{ r['company_name'] or '-' }}</td>
+          <td>
+            {% if r['status'] == 'completed' %}<span class="pdpa-yes">&#10003; เสร็จสมบูรณ์</span>
+            {% else %}<span class="pdpa-no">&#9998; ฉบับร่าง</span>{% endif %}
+          </td>
+          <td>{{ r['updated_at'] }}</td>
+          <td>
+            <a class="btn small" href="{{ url_for('admin_iso_edit', doc_id=r['id']) }}">เปิด</a>
+            <a class="btn small teal" href="{{ url_for('admin_iso_pdf', doc_id=r['id'], download=1) }}">PDF</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;padding:28px;color:#777">
+          ยังไม่มีเอกสาร ISO — ไปที่แฟ้มลูกค้าแล้วกด "สร้าง SL-FO-009 ใหม่"
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+</body>
+</html>

@@ -53,6 +53,35 @@
   </div>
 
   <section class="card">
+    <h2>เอกสาร ISO (E-Document)</h2>
+    <div class="card-body">
+      {% if iso_docs %}
+      <table class="kv" style="margin-bottom:14px">
+        <tr><th>ฟอร์ม</th><th>สถานะ</th><th>แก้ไขล่าสุด</th><th></th></tr>
+        {% for doc in iso_docs %}
+        <tr>
+          <td><b>{{ doc['form_code'] }}</b> #{{ '%04d' % doc['id'] }}</td>
+          <td>{% if doc['status'] == 'completed' %}<span class="pdpa-yes">&#10003; เสร็จสมบูรณ์</span>
+              {% else %}<span class="pdpa-no">&#9998; ฉบับร่าง</span>{% endif %}</td>
+          <td>{{ doc['updated_at'] }}</td>
+          <td>
+            <a class="btn small" href="{{ url_for('admin_iso_edit', doc_id=doc['id']) }}">เปิด/กรอกต่อ</a>
+            <a class="btn small teal" href="{{ url_for('admin_iso_pdf', doc_id=doc['id'], download=1) }}">PDF</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% else %}
+      <p style="color:#777;margin:0 0 14px">ยังไม่มีเอกสาร ISO สำหรับลูกค้ารายนี้</p>
+      {% endif %}
+      <form method="post" action="{{ url_for('admin_iso_new', sid=row['id']) }}">
+        <input type="hidden" name="form_code" value="SL-FO-009">
+        <button class="btn small" type="submit">＋ สร้าง SL-FO-009 (MRS Location Survey) ใหม่</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="card">
     <h2>นโยบาย Compliance &amp; Sanctions (PDPA)</h2>
     <div class="card-body">
       {% if d.get('pdpa_accept') %}

@@ -16,6 +16,7 @@ from flask import (Flask, g, redirect, render_template, request, send_file,
 import io
 
 from pdf_filler import fill_pdf
+from pdf_filler_009 import fill_slfo009
 from translations import LANGS, make_t, review_i18n
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -125,6 +126,18 @@ def init_db():
                     created_at TEXT NOT NULL
                 )
             """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS iso_documents (
+                    id SERIAL PRIMARY KEY,
+                    submission_id INTEGER,
+                    form_code TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'draft',
+                    data TEXT NOT NULL,
+                    created_by TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+            """)
         conn.close()
     else:
         with sqlite3.connect(DB_PATH) as db:
@@ -148,6 +161,18 @@ def init_db():
                     size_bytes INTEGER NOT NULL,
                     data BLOB NOT NULL,
                     created_at TEXT NOT NULL
+                )
+            """)
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS iso_documents (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    submission_id INTEGER,
+                    form_code TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'draft',
+                    data TEXT NOT NULL,
+                    created_by TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
                 )
             """)
 
@@ -246,6 +271,78 @@ MULTI_FIELDS = ["purpose", "elec_source"]
 BOOL_FIELDS = ["elec_bill", "elec_profile", "chiller_profile", "pdpa_accept"]
 STAFF_FIELDS = ["staff_factory", "staff_received_date", "staff_recorded_date",
                 "staff_revision", "staff_recorder"]
+
+# ---------------------------------------------------------------- ISO E-Document: SL-FO-009
+
+ISO009_TEXT_FIELDS = [
+    "company_name", "area", "project_no", "revision_no", "form_date",
+    "land_plot_address", "pipe_distance_m", "surveyor_name", "surveyor_date",
+    "commissioning_date", "gas_consumption_mmbtu_yr",
+    "mrs_type", "mrs_no", "outlet_pressure_barg", "construction_period_days",
+]
+for _r in (1, 2, 3):
+    ISO009_TEXT_FIELDS += [f"mrs{_r}_pressure", f"mrs{_r}_max_flow"]
+    for _y in range(1, 16):
+        ISO009_TEXT_FIELDS.append(f"mrs{_r}_year{_y}")
+
+ISO009_RADIO_FIELDS = ["factory_type", "pipe_within_500m", "gas_heating_zone",
+                        "estimate_scope", "connection_type", "mrs_in_stock"]
+ISO009_MULTI_FIELDS = ["purpose"]
+ISO009_BOOL_FIELDS = ["attach_hardcopy", "attach_electronic", "attach_potential_demand",
+                       "attach_construction_schedule", "attach_mrs_location_drawing",
+                       "mrs_renew_available"]
+
+
+def collect_iso009_form(form):
+    data = {}
+    for f in ISO009_TEXT_FIELDS + ISO009_RADIO_FIELDS:
+        data[f] = form.get(f, "").strip()
+    for f in ISO009_MULTI_FIELDS:
+        data[f] = form.getlist(f)
+    for f in ISO009_BOOL_FIELDS:
+        data[f] = bool(form.get(f))
+    return data
+
+
+def slfo009_autofill(survey_data):
+    """Pre-fill SL-FO-009 fields from an existing Energy Survey (SL-FO-014)
+    submission, so the surveyor only types what's genuinely new."""
+    data = {f: "" for f in ISO009_TEXT_FIELDS + ISO009_RADIO_FIELDS}
+    for f in ISO009_MULTI_FIELDS:
+        data[f] = []
+    for f in ISO009_BOOL_FIELDS:
+        data[f] = False
+
+    data["company_name"] = survey_data.get("company_name", "")
+    data["form_date"] = datetime.now().strftime("%d/%m/%Y")
+
+    location = survey_data.get("plant_location", "").strip()
+    land_plot = survey_data.get("land_plot", "").strip()
+    if location and land_plot:
+        data["land_plot_address"] = f"{location} — แปลงที่ {land_plot}"
+    else:
+        data["land_plot_address"] = location or land_plot
+
+    data["commissioning_date"] = survey_data.get("ng_supply_date", "")
+    data["gas_consumption_mmbtu_yr"] = survey_data.get("cons_year_1", "")
+    for y in range(1, 8):
+        data[f"mrs1_year{y}"] = survey_data.get(f"cap_year_{y}", "")
+    return data
+
+
+def list_iso_documents(submission_id=None):
+    if submission_id is not None:
+        return db_execute(
+            "SELECT * FROM iso_documents WHERE submission_id = ? ORDER BY id DESC",
+            (submission_id,), fetch="all")
+    return db_execute("SELECT * FROM iso_documents ORDER BY id DESC", fetch="all")
+
+
+def _load_iso_document(doc_id):
+    row = db_execute("SELECT * FROM iso_documents WHERE id = ?", (doc_id,), fetch="one")
+    if row is None:
+        abort(404)
+    return row, json.loads(row["data"])
 
 
 def collect_form(form):
@@ -385,8 +482,10 @@ def admin_view(sid):
     attachments = list_attachments(sid)
     fuel_files = [a for a in attachments if a["category"] == "fuel"]
     machine_files = [a for a in attachments if a["category"] == "machine"]
+    iso_docs = list_iso_documents(sid)
     return render_template("admin_view.html", row=row, d=data,
-                           fuel_files=fuel_files, machine_files=machine_files)
+                           fuel_files=fuel_files, machine_files=machine_files,
+                           iso_docs=iso_docs)
 
 
 @app.route("/admin/<int:sid>/attachment/<int:aid>")
@@ -399,6 +498,73 @@ def admin_attachment(sid, aid):
     return send_file(io.BytesIO(blob), mimetype=row["mimetype"],
                      as_attachment=bool(request.args.get("download")),
                      download_name=row["filename"])
+
+# ---------------------------------------------------------------- ISO E-Document
+
+@app.route("/admin/iso")
+@login_required
+def admin_iso_list():
+    rows = list_iso_documents()
+    items = [{"id": r["id"], "form_code": r["form_code"], "status": r["status"],
+             "created_at": r["created_at"], "updated_at": r["updated_at"],
+             "company_name": json.loads(r["data"]).get("company_name", "-"),
+             "submission_id": r["submission_id"]}
+            for r in rows]
+    return render_template("admin_iso_list.html", rows=items)
+
+
+@app.route("/admin/<int:sid>/iso/new", methods=["POST"])
+@login_required
+def admin_iso_new(sid):
+    _row, survey_data = _load_submission(sid)
+    form_code = request.form.get("form_code", "SL-FO-009")
+    data = slfo009_autofill(survey_data)
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    doc_id = db_execute(
+        "INSERT INTO iso_documents (submission_id, form_code, status, data, created_by, created_at, updated_at)"
+        " VALUES (?, ?, 'draft', ?, ?, ?, ?)",
+        (sid, form_code, json.dumps(data, ensure_ascii=False), "", now, now),
+        returning_id=True)
+    return redirect(url_for("admin_iso_edit", doc_id=doc_id))
+
+
+@app.route("/admin/iso/<int:doc_id>", methods=["GET", "POST"])
+@login_required
+def admin_iso_edit(doc_id):
+    row, data = _load_iso_document(doc_id)
+    if request.method == "POST":
+        new_data = collect_iso009_form(request.form)
+        new_data["company_name"] = data.get("company_name", "")  # not user-editable here
+        db_execute(
+            "UPDATE iso_documents SET data = ?, status = ?, updated_at = ? WHERE id = ?",
+            (json.dumps(new_data, ensure_ascii=False),
+             "completed" if request.form.get("mark_completed") else row["status"],
+             datetime.now().strftime("%Y-%m-%d %H:%M:%S"), doc_id))
+        flash("บันทึกข้อมูลแล้ว")
+        return redirect(url_for("admin_iso_edit", doc_id=doc_id))
+    return render_template("admin_iso009_form.html", row=row, d=data)
+
+
+@app.route("/admin/iso/<int:doc_id>/pdf")
+@login_required
+def admin_iso_pdf(doc_id):
+    row, data = _load_iso_document(doc_id)
+    pdf_bytes = fill_slfo009(data)
+    company = re.sub(r"[^0-9A-Za-zก-๙ _.-]+", "", data.get("company_name") or "customer")[:60]
+    fname = f"SL-FO-009-19_{doc_id:04d}_{company or 'customer'}.pdf"
+    return send_file(io.BytesIO(pdf_bytes), mimetype="application/pdf",
+                     as_attachment=bool(request.args.get("download")),
+                     download_name=fname)
+
+
+@app.route("/admin/iso/<int:doc_id>/delete", methods=["POST"])
+@login_required
+def admin_iso_delete(doc_id):
+    row, _data = _load_iso_document(doc_id)
+    sid = row["submission_id"]
+    db_execute("DELETE FROM iso_documents WHERE id = ?", (doc_id,))
+    flash(f"ลบเอกสาร ISO #{doc_id} แล้ว")
+    return redirect(url_for("admin_view", sid=sid) if sid else url_for("admin_iso_list"))
 
 
 @app.route("/admin/<int:sid>/staff", methods=["POST"])
@@ -429,6 +595,7 @@ def admin_pdf(sid):
 @login_required
 def admin_delete(sid):
     db_execute("DELETE FROM attachments WHERE submission_id = ?", (sid,))
+    db_execute("DELETE FROM iso_documents WHERE submission_id = ?", (sid,))
     db_execute("DELETE FROM submissions WHERE id = ?", (sid,))
     flash(f"ลบรายการ #{sid} แล้ว")
     return redirect(url_for("admin_list"))

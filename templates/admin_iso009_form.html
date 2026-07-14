@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SL-FO-009 #{{ '%04d' % row['id'] }} — {{ d.get('company_name') }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% macro tin(name, ph='', cls='') -%}
+<input type="text" class="wiz-input {{ cls }}" name="{{ name }}" value="{{ d.get(name,'') }}" placeholder="{{ ph }}">
+{%- endmacro %}
+{% macro rad(name, val, label) -%}
+<label class="chip-wrap">
+  <input type="radio" name="{{ name }}" value="{{ val }}" {% if d.get(name)==val %}checked{% endif %}>
+  <span class="chip-face">{{ label }}</span>
+</label>
+{%- endmacro %}
+{% macro chk(name, val, label) -%}
+<label class="chip-wrap accent">
+  <input type="checkbox" name="{{ name }}" value="{{ val }}" {% if val in (d.get(name) or []) %}checked{% endif %}>
+  <span class="chip-face">{{ label }}</span>
+</label>
+{%- endmacro %}
+{% macro bchk(name, label) -%}
+<label class="chip-wrap accent">
+  <input type="checkbox" name="{{ name }}" value="1" {% if d.get(name) %}checked{% endif %}>
+  <span class="chip-face">{{ label }}</span>
+</label>
+{%- endmacro %}
+
+<header class="brand">
+  <div class="logo">PTT NGD — ระบบหลังบ้าน</div>
+  <h1>SL-FO-009-19 · MRS Location Survey</h1>
+  <div class="sub">{{ d.get('company_name') or '-' }} · เอกสาร #{{ '%04d' % row['id'] }}
+    {% if row['status'] == 'completed' %}<span class="pdpa-yes" style="margin-left:8px">&#10003; เสร็จสมบูรณ์</span>
+    {% else %}<span class="pdpa-no" style="margin-left:8px">&#9998; ฉบับร่าง</span>{% endif %}</div>
+</header>
+
+<div class="wrap">
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+{% endwith %}
+
+<div class="topbar" style="margin-top:16px">
+  {% if row['submission_id'] %}
+  <a class="btn small gray" href="{{ url_for('admin_view', sid=row['submission_id']) }}">&larr; กลับไปแฟ้มลูกค้า</a>
+  {% else %}
+  <a class="btn small gray" href="{{ url_for('admin_iso_list') }}">&larr; กลับไปทะเบียนเอกสาร ISO</a>
+  {% endif %}
+  <div>
+    <a class="btn small" href="{{ url_for('admin_iso_pdf', doc_id=row['id']) }}" target="_blank">พรีวิว PDF</a>
+    <a class="btn small teal" href="{{ url_for('admin_iso_pdf', doc_id=row['id'], download=1) }}">ดาวน์โหลด PDF</a>
+    <form method="post" action="{{ url_for('admin_iso_delete', doc_id=row['id']) }}" style="display:inline"
+          onsubmit="return confirm('ยืนยันการลบเอกสาร SL-FO-009 #{{ row['id'] }} ?')">
+      <button class="btn small red" type="submit">ลบ</button>
+    </form>
+  </div>
+</div>
+
+<form method="post" autocomplete="off">
+
+  <section class="card">
+    <h2>ข้อมูลทั่วไป / General Information</h2>
+    <div class="card-body">
+      <div class="grid g2">
+        <label class="f"><span class="lbl">บริษัท / Company</span>
+          <input type="text" class="wiz-input" value="{{ d.get('company_name','') }}" disabled
+                 style="background:#eef3f8;color:#5a7189"></label>
+        <label class="f"><span class="lbl">พื้นที่ / Area</span>{{ tin('area') }}</label>
+        <label class="f"><span class="lbl">โครงการเลขที่ / Project No.</span>{{ tin('project_no') }}</label>
+        <label class="f"><span class="lbl">ปรับปรุงครั้งที่ / Revision</span>{{ tin('revision_no') }}</label>
+        <label class="f"><span class="lbl">วันที่ / Date</span>{{ tin('form_date') }}</label>
+      </div>
+      <div class="wiz-fieldnote" style="margin-top:10px">เป็นโรงงาน / Factory</div>
+      <div class="wiz-chiprow">
+        {{ rad('factory_type','existing','เก่า / Existing') }}
+        {{ rad('factory_type','new','ตั้งใหม่ / New') }}
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Part 1. จำแนกประเภทของลูกค้า</h2>
+    <div class="card-body">
+      <label class="f"><span class="lbl">Land plot No. / Address</span>{{ tin('land_plot_address') }}</label>
+      <div class="wiz-fieldnote" style="margin-top:10px">ประเภทลูกค้า</div>
+      <div class="wiz-chiprow">
+        {{ rad('pipe_within_500m','yes','มีท่อผ่าน (≤ 500 ม.)') }}
+        {{ rad('pipe_within_500m','no','ไม่มีท่อผ่าน (≥ 500 ม.)') }}
+      </div>
+      <div class="grid g2" style="margin-top:10px">
+        <label class="f"><span class="lbl">ห่างจากแนวท่อรวม Service pipe (ม.)</span>{{ tin('pipe_distance_m') }}</label>
+      </div>
+      <div class="wiz-fieldnote" style="margin-top:10px">Attachment: Factory location</div>
+      <div class="wiz-chiprow">
+        {{ bchk('attach_hardcopy','Hard copy') }}
+        {{ bchk('attach_electronic','Electronic file') }}
+      </div>
+      <div class="grid g2" style="margin-top:14px">
+        <label class="f"><span class="lbl">ผู้สำรวจ / Surveyor name</span>{{ tin('surveyor_name') }}</label>
+        <label class="f"><span class="lbl">วันที่สำรวจ / Survey date</span>{{ tin('surveyor_date') }}</label>
+      </div>
+      <p class="hint" style="margin-top:10px">หมายเหตุ: ส่วนลงนามของวิศวกร (ส่วนพัฒนาระบบเครือข่าย) ไม่รวมอยู่ในฟอร์มนี้ — วิศวกรจะลงนามในเอกสารที่พิมพ์ออกด้วยตนเอง</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Part 2. ประเมินค่าใช้จ่าย</h2>
+    <div class="card-body">
+      <div class="wiz-fieldnote">โซนราคาก๊าซ / Gas Heating Value zone</div>
+      <div class="wiz-chiprow">
+        {{ rad('gas_heating_zone','west','West (GHV 30,000 Btu/Sm3)') }}
+        {{ rad('gas_heating_zone','east','East (GHV 35,000 Btu/Sm3)') }}
+      </div>
+      <div class="wiz-fieldnote" style="margin-top:10px">ขอบเขตการประเมิน</div>
+      <div class="wiz-chiprow">
+        {{ rad('estimate_scope','main_pipe','ประเมินเฉพาะ Main Pipe') }}
+        {{ rad('estimate_scope','all','ประเมินทั้งหมด') }}
+      </div>
+      <div class="grid g2" style="margin-top:14px">
+        <label class="f"><span class="lbl">Commissioning date requirement</span>{{ tin('commissioning_date') }}</label>
+        <label class="f"><span class="lbl">Gas consumption (MMBtu/year)</span>{{ tin('gas_consumption_mmbtu_yr') }}</label>
+      </div>
+
+      <div class="wiz-fieldnote" style="margin-top:14px;color:#c0392b;font-weight:800">Connection type</div>
+      <div class="wiz-chiprow">
+        {% for n in range(1,7) %}{{ rad('connection_type', n|string, 'Type '~n) }}{% endfor %}
+      </div>
+
+      <h3 class="sub-head" style="margin-top:16px">Estimated NG flow rate (Unit: Sm3/hr)</h3>
+      {% for r in [1,2,3] %}
+      {% set has_val = d.get('mrs'~r~'_pressure') or d.get('mrs'~r~'_max_flow') or d.get('mrs'~r~'_year1') %}
+      <div class="machine-box" data-mrs="{{ r }}" {% if r > 1 and not has_val %}hidden{% endif %}>
+        <h4>MRS {{ r }}</h4>
+        <div class="grid g2">
+          <label class="f"><span class="lbl">Pressure (Barg.)</span>{{ tin('mrs'~r~'_pressure') }}</label>
+          <label class="f"><span class="lbl">Max. flow (Sm3/hr)</span>{{ tin('mrs'~r~'_max_flow') }}</label>
+        </div>
+        <div class="wiz-fieldnote" style="margin-top:8px">Year 1–7</div>
+        <div class="grid g3">
+          {% for y in range(1,8) %}
+          <label class="f"><span class="lbl">ปีที่ {{ y }}</span>{{ tin('mrs'~r~'_year'~y) }}</label>
+          {% endfor %}
+        </div>
+        {% set has_cogen = (d.get('mrs'~r~'_year8') or d.get('mrs'~r~'_year9') or d.get('mrs'~r~'_year10') or d.get('mrs'~r~'_year11') or d.get('mrs'~r~'_year12') or d.get('mrs'~r~'_year13') or d.get('mrs'~r~'_year14') or d.get('mrs'~r~'_year15')) %}
+        <button type="button" class="wiz-detail-toggle" data-cogen-toggle="{{ r }}" aria-expanded="{{ 'true' if has_cogen else 'false' }}">
+          <span class="tri">&#9656;</span> Year 8–15 (สำหรับ Cogen Project)
+        </button>
+        <div class="grid g3" data-cogen-group="{{ r }}" {% if not has_cogen %}hidden{% endif %} style="margin-top:8px">
+          {% for y in range(8,16) %}
+          <label class="f"><span class="lbl">ปีที่ {{ y }}</span>{{ tin('mrs'~r~'_year'~y) }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      <button type="button" class="wiz-add-machine" id="addMrsBtn">＋ เพิ่ม MRS</button>
+
+      <div class="wiz-fieldnote" style="margin-top:16px">วัตถุประสงค์ของแบบสำรวจนี้</div>
+      <div class="wiz-chiprow">
+        {{ chk('purpose','slfo008','เพื่อประกอบ SL-FO-008 (กรณีไม่มีท่อ)') }}
+        {{ chk('purpose','slfo010_011_001','เพื่อขอข้อมูลประกอบ SL-FO-010/011/001') }}
+      </div>
+      <div class="wiz-chiprow" style="margin-top:8px">
+        {{ bchk('attach_potential_demand','Attachment: Potential Demand Table') }}
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>MRS &amp; Construction Information</h2>
+    <div class="card-body">
+      <div class="grid g2">
+        <label class="f"><span class="lbl">MRS Type</span>{{ tin('mrs_type') }}</label>
+        <label class="f"><span class="lbl">MRS No.</span>{{ tin('mrs_no') }}</label>
+      </div>
+      <div class="wiz-fieldnote" style="margin-top:10px">MRS in Stock</div>
+      <div class="wiz-chiprow">
+        {{ rad('mrs_in_stock','available','Available') }}
+        {{ rad('mrs_in_stock','not_available','Not available') }}
+      </div>
+      <div class="grid g2" style="margin-top:14px">
+        <label class="f"><span class="lbl">Outlet Pressure (Barg.)</span>{{ tin('outlet_pressure_barg') }}</label>
+        <label class="f"><span class="lbl">Period of Construction (Days)</span>{{ tin('construction_period_days') }}</label>
+      </div>
+      <div class="wiz-fieldnote" style="margin-top:10px">Attachment</div>
+      <div class="wiz-chiprow">
+        {{ bchk('attach_construction_schedule','Construction Schedule') }}
+        {{ bchk('attach_mrs_location_drawing','MRS Location Drawing') }}
+      </div>
+      <div class="wiz-chiprow" style="margin-top:8px">
+        {{ bchk('mrs_renew_available','MRS Renew Available (Additional)') }}
+      </div>
+      <p class="hint" style="margin-top:10px">หมายเหตุ: ตาราง Diameter/Maximum Flow และการลงนามวิศวกร (ส่วนพัฒนาระบบเครือข่าย) เป็นส่วนของวิศวกร ไม่รวมอยู่ในฟอร์มนี้</p>
+    </div>
+  </section>
+
+  <div class="submit-bar" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+    <button class="btn" type="submit">บันทึก</button>
+    <button class="btn teal" type="submit" name="mark_completed" value="1">บันทึก &amp; ทำเครื่องหมายว่าเสร็จสมบูรณ์</button>
+  </div>
+</form>
+</div>
+
+<script>
+document.querySelectorAll('[data-cogen-toggle]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const r = btn.dataset.cogenToggle;
+    const grp = document.querySelector(`[data-cogen-group="${r}"]`);
+    const open = grp.hidden;
+    grp.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+  });
+});
+const addMrsBtn = document.getElementById('addMrsBtn');
+function refreshAddMrs() {
+  addMrsBtn.hidden = !document.querySelector('.machine-box[data-mrs][hidden]');
+}
+addMrsBtn.addEventListener('click', () => {
+  const next = document.querySelector('.machine-box[data-mrs][hidden]');
+  if (next) next.removeAttribute('hidden');
+  refreshAddMrs();
+});
+refreshAddMrs();
+</script>
+</body>
+</html>
