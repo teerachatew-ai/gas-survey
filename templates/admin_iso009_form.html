@@ -98,8 +98,8 @@
         {{ bchk('attach_electronic','Electronic file') }}
       </div>
       <div class="grid g2" style="margin-top:14px">
-        <label class="f"><span class="lbl">ผู้สำรวจ / Surveyor name</span>{{ tin('surveyor_name') }}</label>
-        <label class="f"><span class="lbl">วันที่สำรวจ / Survey date</span>{{ tin('surveyor_date') }}</label>
+        <label class="f"><span class="lbl">ผู้กรอกข้อมูล / Filled by</span>{{ tin('surveyor_name') }}</label>
+        <label class="f"><span class="lbl">วันที่ / Date</span>{{ tin('surveyor_date') }}</label>
       </div>
       <p class="hint" style="margin-top:10px">หมายเหตุ: ส่วนลงนามของวิศวกร (ส่วนพัฒนาระบบเครือข่าย) ไม่รวมอยู่ในฟอร์มนี้ — วิศวกรจะลงนามในเอกสารที่พิมพ์ออกด้วยตนเอง</p>
     </div>
@@ -123,9 +123,14 @@
         <label class="f"><span class="lbl">Gas consumption (MMBtu/year)</span>{{ tin('gas_consumption_mmbtu_yr') }}</label>
       </div>
 
-      <div class="wiz-fieldnote" style="margin-top:14px;color:#c0392b;font-weight:800">Connection type</div>
-      <div class="wiz-chiprow">
-        {% for n in range(1,7) %}{{ rad('connection_type', n|string, 'Type '~n) }}{% endfor %}
+      <div class="wiz-fieldnote" style="margin-top:14px;color:#c0392b;font-weight:800">Connection type — เลือกรูปแบบที่ตรงกับหน้างานจริง</div>
+      <div class="conn-type-grid">
+        {% for n in range(1,7) %}
+        <div class="conn-type-card">
+          {{ rad('connection_type', n|string, 'Type '~n) }}
+          <img src="{{ url_for('static', filename='img/conn_type'~n~'.png') }}" alt="Connection Type {{ n }} diagram" loading="lazy">
+        </div>
+        {% endfor %}
       </div>
 
       <h3 class="sub-head" style="margin-top:16px">Estimated NG flow rate (Unit: Sm3/hr)</h3>

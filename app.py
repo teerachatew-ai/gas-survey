@@ -312,6 +312,7 @@ def slfo009_autofill(survey_data):
 
     data["company_name"] = survey_data.get("company_name", "")
     data["form_date"] = datetime.now().strftime("%d/%m/%Y")
+    data["surveyor_date"] = datetime.now().strftime("%d/%m/%Y")
 
     location = survey_data.get("plant_location", "").strip()
     land_plot = survey_data.get("land_plot", "").strip()
