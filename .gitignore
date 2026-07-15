@@ -5,3 +5,7 @@ test_*.png
 e2e_*.png
 *_filled.pdf
 e2e_export*.pdf
+scratch_*
+/*.xlsx
+~$*.xlsx
+/PTTNGD-*.pdf

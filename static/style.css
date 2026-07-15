@@ -118,6 +118,20 @@ table.sheet input { padding: 5px 6px; border-radius: 4px; text-align: center; }
 
 .machine-box { border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-top: 10px; background: #f8fbff; }
 .machine-box h4 { margin: 0 0 8px; color: var(--blue-dark); }
+.doc-file-list { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13px; }
+.doc-file-list li { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+
+.home-choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 720px) { .home-choice-grid { grid-template-columns: 1fr; } }
+.home-choice-card {
+  display: block; background: #fff; border: 1px solid var(--line); border-radius: 12px;
+  padding: 26px 22px; text-decoration: none; color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0,0,0,.05); transition: box-shadow .15s, transform .15s;
+}
+.home-choice-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,.1); transform: translateY(-2px); }
+.home-choice-icon { font-size: 34px; }
+.home-choice-card h2 { margin: 8px 0 6px; color: var(--blue-dark); }
+.home-choice-card p { margin: 0 0 16px; color: #52667a; font-size: 13.5px; line-height: 1.5; }
 
 .conn-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 @media (max-width: 720px) { .conn-type-grid { grid-template-columns: repeat(2, 1fr); } }

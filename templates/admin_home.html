@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ระบบหลังบ้าน | PTT NGD</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="brand">
+  <div class="logo">PTT NGD — ระบบหลังบ้าน</div>
+  <h1>เลือกประเภทงานที่ต้องการทำ</h1>
+  <div class="sub">แยกตามลักษณะลูกค้า เพื่อเข้าสู่ flow ที่เหมาะสม</div>
+</header>
+<div class="wrap">
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+{% endwith %}
+  <div class="topbar" style="margin-top:16px">
+    <div></div>
+    <div><a class="btn small gray" href="{{ url_for('admin_logout') }}">ออกจากระบบ</a></div>
+  </div>
+
+  <div class="home-choice-grid" style="margin-top:14px">
+    <a class="home-choice-card" href="{{ url_for('admin_list') }}">
+      <div class="home-choice-icon">🆕</div>
+      <h2>New Customer</h2>
+      <p>ลูกค้าใหม่ — แบบสอบถามความต้องการใช้พลังงาน (SL-FO-014) และเอกสาร ISO E-Document ที่ต่อยอดจากแบบสอบถาม</p>
+      <span class="btn teal">เข้าสู่ระบบลูกค้าใหม่ →</span>
+    </a>
+    <a class="home-choice-card" href="{{ url_for('admin_contracts_list') }}">
+      <div class="home-choice-icon">🔄</div>
+      <h2>Existing Customer</h2>
+      <p>ลูกค้าเดิม — ขออนุมัติต่อสัญญา (SL-FO-001) พร้อมแนบเอกสารและอ่านข้อมูลอัตโนมัติ (OCR)</p>
+      <span class="btn">เข้าสู่ระบบลูกค้าเดิม →</span>
+    </a>
+  </div>
+</div>
+</body>
+</html>

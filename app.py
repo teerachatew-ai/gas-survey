@@ -4,6 +4,7 @@ PNGD SL-FO-014-09 — Online energy-demand questionnaire
 - /survey        : customer-facing form (questions identical to the PDF)
 - /admin         : back office — list, view, export filled PDF per customer
 """
+import base64
 import json
 import os
 import re
@@ -14,6 +15,8 @@ from functools import wraps
 from flask import (Flask, g, redirect, render_template, request, send_file,
                    session, url_for, abort, flash)
 import io
+
+import anthropic
 
 from pdf_filler import fill_pdf
 from pdf_filler_009 import fill_slfo009
@@ -138,6 +141,30 @@ def init_db():
                     updated_at TEXT NOT NULL
                 )
             """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS contract_requests (
+                    id SERIAL PRIMARY KEY,
+                    company_name TEXT,
+                    status TEXT NOT NULL DEFAULT 'draft',
+                    terms_data TEXT NOT NULL DEFAULT '{}',
+                    info_data TEXT NOT NULL DEFAULT '{}',
+                    created_by TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS contract_documents (
+                    id SERIAL PRIMARY KEY,
+                    contract_request_id INTEGER NOT NULL,
+                    category TEXT NOT NULL,
+                    filename TEXT NOT NULL,
+                    mimetype TEXT NOT NULL,
+                    size_bytes INTEGER NOT NULL,
+                    data BYTEA NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+            """)
         conn.close()
     else:
         with sqlite3.connect(DB_PATH) as db:
@@ -173,6 +200,30 @@ def init_db():
                     created_by TEXT,
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
+                )
+            """)
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS contract_requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    company_name TEXT,
+                    status TEXT NOT NULL DEFAULT 'draft',
+                    terms_data TEXT NOT NULL DEFAULT '{}',
+                    info_data TEXT NOT NULL DEFAULT '{}',
+                    created_by TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+            """)
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS contract_documents (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    contract_request_id INTEGER NOT NULL,
+                    category TEXT NOT NULL,
+                    filename TEXT NOT NULL,
+                    mimetype TEXT NOT NULL,
+                    size_bytes INTEGER NOT NULL,
+                    data BLOB NOT NULL,
+                    created_at TEXT NOT NULL
                 )
             """)
 
@@ -236,6 +287,189 @@ def get_attachment(aid, submission_id):
     return db_execute(
         "SELECT * FROM attachments WHERE id = ? AND submission_id = ?",
         (aid, submission_id), fetch="one")
+
+# ---------------------------------------------------------------- Existing Customer: contract requests
+
+CONTRACT_DOC_CATEGORIES = [
+    ("biz_cert", "สำเนาหนังสือรับรองการจดทะเบียนบริษัท (ไม่เกิน 6 เดือน)"),
+    ("poa", "สำเนาหนังสือมอบอำนาจ (กรณีมอบอำนาจ)"),
+    ("vat_cert", "สำเนาหนังสือรับรอง ภ.พ.20"),
+    ("memorandum", "สำเนาหนังสือบริคณห์สนธิ"),
+    ("id_authorized", "สำเนาบัตรประชาชน/พาสปอร์ตผู้มีอำนาจลงนาม"),
+    ("id_witness", "สำเนาบัตรประชาชน/พาสปอร์ตพยาน"),
+    ("proposal_letter", "หนังสือข้อเสนอเงื่อนไขส่งจ่ายก๊าซฯ"),
+    ("land_permit", "สำเนาใบอนุญาตให้ใช้ที่ดิน/หนังสือยินยอมใช้สถานที่"),
+]
+CONTRACT_DOC_CATEGORY_KEYS = [c[0] for c in CONTRACT_DOC_CATEGORIES]
+# Which of the checklist categories are worth sending to OCR — legal identity
+# documents that carry the company/person data the form asks for.
+CONTRACT_DOC_OCR_CATEGORIES = {"biz_cert", "vat_cert", "memorandum", "id_authorized", "id_witness"}
+
+CONTRACT_INFO_TEXT_FIELDS = [
+    "company_name_th", "company_name_en", "tel", "fax", "industrial_estate",
+    "address_cert_th", "address_cert_en", "address_vat_th", "address_vat_en",
+    "address_factory_th", "address_factory_en", "address_invoice_th", "address_invoice_en",
+    "authorized_name_1", "authorized_name_2", "authorized_position",
+    "witness_name_1", "witness_name_2", "witness_position",
+    "contact_person", "contact_mobile", "remark",
+]
+CONTRACT_INFO_MULTI_FIELDS = ["doc_purpose", "contract_lang"]
+CONTRACT_INFO_BOOL_FIELDS = [f"doc_{k}" for k in CONTRACT_DOC_CATEGORY_KEYS]
+# Fields OCR is allowed to propose values for (kept separate from the full
+# field list since OCR should never touch contact_person/remark etc.)
+CONTRACT_INFO_OCR_FIELDS = [
+    "company_name_th", "company_name_en", "industrial_estate",
+    "address_cert_th", "address_cert_en", "address_vat_th", "address_vat_en",
+    "authorized_name_1", "authorized_name_2", "authorized_position",
+    "witness_name_1", "witness_name_2", "witness_position",
+]
+
+
+def collect_contract_info_form(form):
+    data = {}
+    for f in CONTRACT_INFO_TEXT_FIELDS:
+        data[f] = form.get(f, "").strip()
+    for f in CONTRACT_INFO_MULTI_FIELDS:
+        data[f] = form.getlist(f)
+    for f in CONTRACT_INFO_BOOL_FIELDS:
+        data[f] = bool(form.get(f))
+    return data
+
+
+def list_contract_requests():
+    return db_execute("SELECT * FROM contract_requests ORDER BY id DESC", fetch="all")
+
+
+def _load_contract_request(cid):
+    row = db_execute("SELECT * FROM contract_requests WHERE id = ?", (cid,), fetch="one")
+    if row is None:
+        abort(404)
+    return row, json.loads(row["info_data"] or "{}")
+
+
+def save_contract_documents(contract_id, category, files):
+    db = get_db()
+    saved = 0
+    for fs in files:
+        if not _attachment_allowed(fs):
+            continue
+        blob = fs.read()
+        if not blob or len(blob) > MAX_ATTACHMENT_BYTES:
+            continue
+        filename = os.path.basename(fs.filename)[:200]
+        mimetype = fs.mimetype or "application/octet-stream"
+        created = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if USE_PG:
+            with db.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO contract_documents"
+                    " (contract_request_id, category, filename, mimetype, size_bytes, data, created_at)"
+                    " VALUES (%s,%s,%s,%s,%s,%s,%s)",
+                    (contract_id, category, filename, mimetype, len(blob),
+                     psycopg2.Binary(blob), created))
+            db.commit()
+        else:
+            db.execute(
+                "INSERT INTO contract_documents"
+                " (contract_request_id, category, filename, mimetype, size_bytes, data, created_at)"
+                " VALUES (?,?,?,?,?,?,?)",
+                (contract_id, category, filename, mimetype, len(blob), blob, created))
+            db.commit()
+        saved += 1
+    return saved
+
+
+def list_contract_documents(contract_id):
+    return db_execute(
+        "SELECT id, category, filename, mimetype, size_bytes, created_at FROM contract_documents"
+        " WHERE contract_request_id = ? ORDER BY category, id", (contract_id,), fetch="all")
+
+
+def get_contract_document(doc_id, contract_id):
+    return db_execute(
+        "SELECT * FROM contract_documents WHERE id = ? AND contract_request_id = ?",
+        (doc_id, contract_id), fetch="one")
+
+
+OCR_MODEL = "claude-sonnet-5"
+OCR_MAX_DOCS = 6
+
+
+def _contract_ocr_documents(contract_id):
+    return db_execute(
+        "SELECT category, filename, mimetype, data FROM contract_documents"
+        " WHERE contract_request_id = ? ORDER BY id", (contract_id,), fetch="all")
+
+
+def ocr_fill_contract_info(contract_id):
+    """Read the legal documents attached to a contract request (company cert,
+    VAT cert, ID cards, ...) and use Claude's vision to propose values for the
+    blank fields of the customer info form. Only fills fields that are
+    currently empty — never overwrites something staff already typed."""
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("ยังไม่ได้ตั้งค่า ANTHROPIC_API_KEY บนเซิร์ฟเวอร์")
+
+    docs = [d for d in _contract_ocr_documents(contract_id)
+            if d["category"] in CONTRACT_DOC_OCR_CATEGORIES]
+    if not docs:
+        raise RuntimeError("ยังไม่มีเอกสารที่อ่านได้ — กรุณาแนบไฟล์ก่อน (หนังสือรับรอง/ภ.พ.20/บัตรประชาชน)")
+
+    content = [{
+        "type": "text",
+        "text": (
+            "You are reading Thai company legal documents (business registration "
+            "certificate, VAT registration certificate ภ.พ.20, memorandum of "
+            "association, national ID cards / passports of authorized signatories "
+            "and witnesses) for a natural gas supply contract renewal.\n"
+            "Extract the following fields and return ONLY a single JSON object "
+            "(no markdown fences, no commentary) with exactly these keys: "
+            + json.dumps(CONTRACT_INFO_OCR_FIELDS) + "\n"
+            "Rules: company_name_th/company_name_en are the registered company "
+            "name in Thai/English. address_cert_th/en is the registered address "
+            "on the business registration certificate. address_vat_th/en is the "
+            "address on the VAT (ภ.พ.20) certificate. authorized_name_1/2 are "
+            "the authorized signatories' full names, authorized_position is "
+            "their position/title. witness_name_1/2 and witness_position are "
+            "for any witnesses if identifiable, otherwise leave blank. Use an "
+            "empty string for any field you cannot find with confidence — "
+            "never guess."
+        ),
+    }]
+    for d in docs[:OCR_MAX_DOCS]:
+        blob = bytes(d["data"])
+        b64 = base64.b64encode(blob).decode("ascii")
+        if d["mimetype"] == "application/pdf":
+            content.append({"type": "document",
+                            "source": {"type": "base64", "media_type": "application/pdf", "data": b64}})
+        else:
+            content.append({"type": "image",
+                            "source": {"type": "base64", "media_type": d["mimetype"], "data": b64}})
+
+    client = anthropic.Anthropic(api_key=api_key)
+    resp = client.messages.create(
+        model=OCR_MODEL, max_tokens=1024,
+        messages=[{"role": "user", "content": content}])
+    raw = "".join(block.text for block in resp.content if block.type == "text").strip()
+    raw = re.sub(r"^```(?:json)?|```$", "", raw, flags=re.MULTILINE).strip()
+    try:
+        extracted = json.loads(raw)
+    except ValueError:
+        raise RuntimeError("โมเดลตอบกลับมาไม่เป็น JSON ที่อ่านได้ — ลองใหม่อีกครั้ง")
+
+    _row, data = _load_contract_request(contract_id)
+    filled = 0
+    for key in CONTRACT_INFO_OCR_FIELDS:
+        value = (extracted.get(key) or "").strip()
+        if value and not (data.get(key) or "").strip():
+            data[key] = value
+            filled += 1
+    if filled:
+        db_execute(
+            "UPDATE contract_requests SET info_data = ?, updated_at = ? WHERE id = ?",
+            (json.dumps(data, ensure_ascii=False),
+             datetime.now().strftime("%Y-%m-%d %H:%M:%S"), contract_id))
+    return filled
 
 # ---------------------------------------------------------------- form fields
 
@@ -427,7 +661,7 @@ def admin_login():
         if (request.form.get("username") == ADMIN_USER
                 and request.form.get("password") == ADMIN_PASSWORD):
             session["admin"] = True
-            return redirect(request.args.get("next") or url_for("admin_list"))
+            return redirect(request.args.get("next") or url_for("admin_home"))
         error = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"
     return render_template("admin_login.html", error=error)
 
@@ -436,6 +670,12 @@ def admin_login():
 def admin_logout():
     session.pop("admin", None)
     return redirect(url_for("admin_login"))
+
+
+@app.route("/admin/home")
+@login_required
+def admin_home():
+    return render_template("admin_home.html")
 
 
 @app.route("/admin")
@@ -565,6 +805,106 @@ def admin_iso_delete(doc_id):
     if request.form.get("next") == "list":
         return redirect(url_for("admin_iso_list"))
     return redirect(url_for("admin_view", sid=sid) if sid else url_for("admin_iso_list"))
+
+# ---------------------------------------------------------------- Existing Customer: contract requests
+
+@app.route("/admin/contracts")
+@login_required
+def admin_contracts_list():
+    rows = list_contract_requests()
+    return render_template("admin_contracts_list.html", rows=rows)
+
+
+@app.route("/admin/contracts/new", methods=["POST"])
+@login_required
+def admin_contract_new():
+    company_name = request.form.get("company_name", "").strip()
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    info_data = {f: "" for f in CONTRACT_INFO_TEXT_FIELDS}
+    for f in CONTRACT_INFO_MULTI_FIELDS:
+        info_data[f] = []
+    for f in CONTRACT_INFO_BOOL_FIELDS:
+        info_data[f] = False
+    cid = db_execute(
+        "INSERT INTO contract_requests (company_name, status, terms_data, info_data, created_at, updated_at)"
+        " VALUES (?, 'draft', '{}', ?, ?, ?)",
+        (company_name, json.dumps(info_data, ensure_ascii=False), now, now),
+        returning_id=True)
+    return redirect(url_for("admin_contract_view", cid=cid))
+
+
+@app.route("/admin/contracts/<int:cid>")
+@login_required
+def admin_contract_view(cid):
+    row, data = _load_contract_request(cid)
+    docs = list_contract_documents(cid)
+    return render_template("admin_contract_view.html", row=row, d=data, docs=docs)
+
+
+@app.route("/admin/contracts/<int:cid>/delete", methods=["POST"])
+@login_required
+def admin_contract_delete(cid):
+    db_execute("DELETE FROM contract_documents WHERE contract_request_id = ?", (cid,))
+    db_execute("DELETE FROM contract_requests WHERE id = ?", (cid,))
+    flash(f"ลบคำขอต่อสัญญา #{cid} แล้ว")
+    return redirect(url_for("admin_contracts_list"))
+
+
+@app.route("/admin/contracts/<int:cid>/info", methods=["GET", "POST"])
+@login_required
+def admin_contract_info(cid):
+    row, data = _load_contract_request(cid)
+    if request.method == "POST":
+        new_data = collect_contract_info_form(request.form)
+        db_execute(
+            "UPDATE contract_requests SET company_name = ?, info_data = ?, updated_at = ? WHERE id = ?",
+            (new_data.get("company_name_th") or row["company_name"],
+             json.dumps(new_data, ensure_ascii=False),
+             datetime.now().strftime("%Y-%m-%d %H:%M:%S"), cid))
+        for key, _label in CONTRACT_DOC_CATEGORIES:
+            save_contract_documents(cid, key, request.files.getlist(f"doc_{key}_files"))
+        flash("บันทึกข้อมูลแล้ว")
+        return redirect(url_for("admin_contract_info", cid=cid))
+    docs = list_contract_documents(cid)
+    docs_by_cat = {}
+    for doc in docs:
+        docs_by_cat.setdefault(doc["category"], []).append(doc)
+    return render_template("admin_contract_info_form.html", row=row, d=data,
+                           categories=CONTRACT_DOC_CATEGORIES, docs_by_cat=docs_by_cat)
+
+
+@app.route("/admin/contracts/<int:cid>/info/ocr", methods=["POST"])
+@login_required
+def admin_contract_ocr(cid):
+    _load_contract_request(cid)  # 404s if missing
+    try:
+        filled = ocr_fill_contract_info(cid)
+    except Exception as e:
+        flash(f"อ่านข้อมูลอัตโนมัติไม่สำเร็จ: {e}")
+    else:
+        flash(f"อ่านข้อมูลอัตโนมัติสำเร็จ — เติมข้อมูลให้ {filled} ช่อง (ตรวจสอบและแก้ไขได้ตามจริง)"
+              if filled else "อ่านเอกสารแล้ว แต่ไม่พบข้อมูลใหม่ที่มั่นใจพอจะเติมให้อัตโนมัติ")
+    return redirect(url_for("admin_contract_info", cid=cid))
+
+
+@app.route("/admin/contracts/<int:cid>/documents/<int:doc_id>")
+@login_required
+def admin_contract_document(cid, doc_id):
+    row = get_contract_document(doc_id, cid)
+    if row is None:
+        abort(404)
+    blob = bytes(row["data"])
+    return send_file(io.BytesIO(blob), mimetype=row["mimetype"],
+                     as_attachment=bool(request.args.get("download")),
+                     download_name=row["filename"])
+
+
+@app.route("/admin/contracts/<int:cid>/documents/<int:doc_id>/delete", methods=["POST"])
+@login_required
+def admin_contract_document_delete(cid, doc_id):
+    db_execute("DELETE FROM contract_documents WHERE id = ? AND contract_request_id = ?", (doc_id, cid))
+    flash("ลบไฟล์แนบแล้ว")
+    return redirect(url_for("admin_contract_info", cid=cid))
 
 
 @app.route("/admin/<int:sid>/staff", methods=["POST"])

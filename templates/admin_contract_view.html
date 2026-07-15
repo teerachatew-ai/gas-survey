@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>คำขอต่อสัญญา #{{ '%04d' % row['id'] }} — {{ row['company_name'] }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="brand">
+  <div class="logo">PTT NGD — ระบบหลังบ้าน</div>
+  <h1>{{ row['company_name'] or '-' }}</h1>
+  <div class="sub">คำขอต่อสัญญา #{{ '%04d' % row['id'] }}
+    {% if row['status'] == 'completed' %}<span class="pdpa-yes" style="margin-left:8px">&#10003; เสร็จสมบูรณ์</span>
+    {% else %}<span class="pdpa-no" style="margin-left:8px">&#9998; ฉบับร่าง</span>{% endif %}</div>
+</header>
+<div class="wrap">
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+{% endwith %}
+  <div class="topbar" style="margin-top:16px">
+    <a class="btn small gray" href="{{ url_for('admin_contracts_list') }}">&larr; กลับไปรายการคำขอต่อสัญญา</a>
+    <form method="post" action="{{ url_for('admin_contract_delete', cid=row['id']) }}" style="display:inline"
+          onsubmit="return confirm('ยืนยันการลบคำขอต่อสัญญา #{{ row['id'] }} (รวมเอกสารแนบทั้งหมด) ?')">
+      <button class="btn small red" type="submit">ลบคำขอนี้</button>
+    </form>
+  </div>
+
+  <div class="home-choice-grid" style="margin-top:14px">
+    <a class="home-choice-card" href="{{ url_for('admin_contract_info', cid=row['id']) }}">
+      <div class="home-choice-icon">📋</div>
+      <h2>ข้อมูลและเอกสารลูกค้า</h2>
+      <p>กรอกข้อมูลบริษัท ผู้มีอำนาจลงนาม พยาน พร้อมแนบเอกสารประกอบและอ่านข้อมูลอัตโนมัติ (OCR)</p>
+      <span class="btn teal">เปิดฟอร์ม →</span>
+    </a>
+    <div class="home-choice-card" style="opacity:.55;cursor:not-allowed">
+      <div class="home-choice-icon">📝</div>
+      <h2>SL-FO-001 เงื่อนไขสัญญา</h2>
+      <p>บันทึกรายละเอียดเพื่อออกสัญญาซื้อขายก๊าซธรรมชาติ (เงื่อนไขเชิงพาณิชย์)</p>
+      <span class="btn gray">กำลังพัฒนา — เร็วๆ นี้</span>
+    </div>
+  </div>
+
+  <section class="card" style="margin-top:14px">
+    <h2>เอกสารแนบทั้งหมด ({{ docs|length }} ไฟล์)</h2>
+    <div class="card-body">
+      {% if docs %}
+      <table class="kv">
+        {% for doc in docs %}
+        <tr><td>{{ doc['category'] }}</td><td>{{ doc['filename'] }}</td>
+          <td><a href="{{ url_for('admin_contract_document', cid=row['id'], doc_id=doc['id']) }}" target="_blank">ดู</a></td></tr>
+        {% endfor %}
+      </table>
+      {% else %}
+      <p class="hint">ยังไม่มีไฟล์แนบ — แนบได้ในหน้า "ข้อมูลและเอกสารลูกค้า"</p>
+      {% endif %}
+    </div>
+  </section>
+</div>
+</body>
+</html>

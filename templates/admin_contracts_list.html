@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ลูกค้าเดิม — ขอต่อสัญญา | ระบบหลังบ้าน</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="brand">
+  <div class="logo">PTT NGD — ระบบหลังบ้าน</div>
+  <h1>Existing Customer — คำขอต่อสัญญา (SL-FO-001)</h1>
+  <div class="sub">รายการคำขอทั้งหมด</div>
+</header>
+<div class="wrap">
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+{% endwith %}
+  <div class="topbar" style="margin-top:16px">
+    <form method="post" action="{{ url_for('admin_contract_new') }}" style="display:flex;gap:8px">
+      <input type="text" name="company_name" placeholder="ชื่อบริษัทลูกค้า" required style="width:280px">
+      <button class="btn small" type="submit">＋ สร้างคำขอใหม่</button>
+    </form>
+    <div>
+      <a class="btn small gray" href="{{ url_for('admin_home') }}">← หน้าหลัก</a>
+      <a class="btn small gray" href="{{ url_for('admin_logout') }}">ออกจากระบบ</a>
+    </div>
+  </div>
+
+  <section class="card" style="margin-top:14px">
+    <table class="list">
+      <thead>
+        <tr><th>#</th><th>บริษัท</th><th>สถานะ</th><th>แก้ไขล่าสุด</th><th style="width:160px">การจัดการ</th></tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ '%04d' % r['id'] }}</td>
+          <td><a href="{{ url_for('admin_contract_view', cid=r['id']) }}">{{ r['company_name'] or '-' }}</a></td>
+          <td>
+            {% if r['status'] == 'completed' %}<span class="pdpa-yes">&#10003; เสร็จสมบูรณ์</span>
+            {% else %}<span class="pdpa-no">&#9998; ฉบับร่าง</span>{% endif %}
+          </td>
+          <td>{{ r['updated_at'] }}</td>
+          <td>
+            <a class="btn small" href="{{ url_for('admin_contract_view', cid=r['id']) }}">เปิด</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;padding:28px;color:#777">
+          ยังไม่มีคำขอต่อสัญญา — กรอกชื่อบริษัทด้านบนแล้วกด "สร้างคำขอใหม่"
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+</body>
+</html>

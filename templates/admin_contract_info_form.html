@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ข้อมูลและเอกสารลูกค้า #{{ '%04d' % row['id'] }} — {{ row['company_name'] }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% macro tin(name, ph='', cls='') -%}
+<input type="text" class="wiz-input {{ cls }}" name="{{ name }}" value="{{ d.get(name,'') }}" placeholder="{{ ph }}">
+{%- endmacro %}
+{% macro chk(name, val, label) -%}
+<label class="chip-wrap accent">
+  <input type="checkbox" name="{{ name }}" value="{{ val }}" {% if val in (d.get(name) or []) %}checked{% endif %}>
+  <span class="chip-face">{{ label }}</span>
+</label>
+{%- endmacro %}
+
+<header class="brand">
+  <div class="logo">PTT NGD — ระบบหลังบ้าน</div>
+  <h1>แบบฟอร์มข้อมูลและเอกสารลูกค้าก๊าซธรรมชาติ</h1>
+  <div class="sub">{{ row['company_name'] or '-' }} · คำขอ #{{ '%04d' % row['id'] }}</div>
+</header>
+
+<div class="wrap">
+{% with messages = get_flashed_messages() %}
+  {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+{% endwith %}
+
+<div class="topbar" style="margin-top:16px">
+  <a class="btn small gray" href="{{ url_for('admin_contract_view', cid=row['id']) }}">&larr; กลับไปคำขอต่อสัญญา</a>
+</div>
+
+<form method="post" autocomplete="off" enctype="multipart/form-data">
+
+  <section class="card">
+    <h2>วัตถุประสงค์</h2>
+    <div class="card-body">
+      <div class="wiz-chiprow">
+        {{ chk('doc_purpose','contract','สัญญาซื้อขายก๊าซธรรมชาติ (The Contract)') }}
+        {{ chk('doc_purpose','addendum','บันทึกข้อตกลงแนบท้ายสัญญาฯ (The Addendum)') }}
+        {{ chk('doc_purpose','info_update','ปรับปรุงข้อมูล (To modify the information)') }}
+      </div>
+      <div class="wiz-chiprow" style="margin-top:8px">
+        {{ chk('contract_lang','thai','ทำสัญญาด้วยภาษาไทย (Thai)') }}
+        {{ chk('contract_lang','english_draft','ทำร่างฉบับภาษาอังกฤษ (English draft)') }}
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>ข้อมูลบริษัท / Company Information</h2>
+    <div class="card-body">
+      <div class="grid g2">
+        <label class="f"><span class="lbl">ชื่อบริษัท (ไทย) / Company name (TH)</span>{{ tin('company_name_th') }}</label>
+        <label class="f"><span class="lbl">Company name (English)</span>{{ tin('company_name_en') }}</label>
+        <label class="f"><span class="lbl">โทรศัพท์ / Tel.</span>{{ tin('tel') }}</label>
+        <label class="f"><span class="lbl">โทรสาร / Fax</span>{{ tin('fax') }}</label>
+        <label class="f"><span class="lbl">นิคมอุตสาหกรรม / Industrial Estate</span>{{ tin('industrial_estate') }}</label>
+      </div>
+
+      <h3 class="sub-head" style="margin-top:16px">ที่อยู่ตามหนังสือรับรอง / In Business Registration Certificate</h3>
+      <div class="grid g2">
+        <label class="f"><span class="lbl">ไทย</span>{{ tin('address_cert_th') }}</label>
+        <label class="f"><span class="lbl">English</span>{{ tin('address_cert_en') }}</label>
+      </div>
+      <h3 class="sub-head" style="margin-top:16px">ที่อยู่ตาม ภ.พ.20 / VAT Registration Certificate 20</h3>
+      <div class="grid g2">
+        <label class="f"><span class="lbl">ไทย</span>{{ tin('address_vat_th') }}</label>
+        <label class="f"><span class="lbl">English</span>{{ tin('address_vat_en') }}</label>
+      </div>
+      <h3 class="sub-head" style="margin-top:16px">ที่อยู่โรงงานที่ใช้ก๊าซฯ / Factory that use the Natural Gas</h3>
+      <div class="grid g2">
+        <label class="f"><span class="lbl">ไทย</span>{{ tin('address_factory_th') }}</label>
+        <label class="f"><span class="lbl">English</span>{{ tin('address_factory_en') }}</label>
+      </div>
+      <h3 class="sub-head" style="margin-top:16px">ที่อยู่ในการส่งใบแจ้งหนี้ / Invoice (Billing) Address</h3>
+      <div class="grid g2">
+        <label class="f"><span class="lbl">ไทย</span>{{ tin('address_invoice_th') }}</label>
+        <label class="f"><span class="lbl">English</span>{{ tin('address_invoice_en') }}</label>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>ผู้มีอำนาจลงนาม / พยาน</h2>
+    <div class="card-body">
+      <div class="grid g2">
+        <label class="f"><span class="lbl">ชื่อผู้มีอำนาจลงนาม 1</span>{{ tin('authorized_name_1') }}</label>
+        <label class="f"><span class="lbl">ชื่อผู้มีอำนาจลงนาม 2</span>{{ tin('authorized_name_2') }}</label>
+        <label class="f"><span class="lbl">ตำแหน่ง / Position</span>{{ tin('authorized_position') }}</label>
+      </div>
+      <div class="grid g2" style="margin-top:14px">
+        <label class="f"><span class="lbl">ชื่อพยาน 1</span>{{ tin('witness_name_1') }}</label>
+        <label class="f"><span class="lbl">ชื่อพยาน 2</span>{{ tin('witness_name_2') }}</label>
+        <label class="f"><span class="lbl">ตำแหน่ง / Position</span>{{ tin('witness_position') }}</label>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>เอกสารประกอบ / Requirement Documents</h2>
+    <div class="card-body">
+      <p class="hint">แนบไฟล์แต่ละประเภทแล้วกด "บันทึก" ก่อน จากนั้นกดปุ่ม "อ่านข้อมูลอัตโนมัติ (OCR)" ด้านล่างเพื่อให้ระบบช่วยเติมข้อมูลบริษัท/ผู้มีอำนาจ/พยานให้ — ข้อมูลที่ระบบอ่านไม่ได้ให้กรอกเองตามจริง</p>
+      {% for key, label in categories %}
+      <div class="machine-box">
+        <label class="chip-wrap accent">
+          <input type="checkbox" name="doc_{{ key }}" value="1" {% if d.get('doc_'~key) %}checked{% endif %}>
+          <span class="chip-face">{{ label }}</span>
+        </label>
+        {% set files = docs_by_cat.get(key, []) %}
+        {% if files %}
+        <ul class="doc-file-list">
+          {% for f in files %}
+          <li>
+            <a href="{{ url_for('admin_contract_document', cid=row['id'], doc_id=f['id']) }}" target="_blank">{{ f['filename'] }}</a>
+            <form method="post" action="{{ url_for('admin_contract_document_delete', cid=row['id'], doc_id=f['id']) }}" style="display:inline">
+              <button class="btn small red" type="submit" formnovalidate>ลบ</button>
+            </form>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        <input type="file" name="doc_{{ key }}_files" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif" style="margin-top:8px">
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>ผู้ติดต่อ / หมายเหตุ</h2>
+    <div class="card-body">
+      <div class="grid g2">
+        <label class="f"><span class="lbl">ผู้ติดต่อ / Contact Person</span>{{ tin('contact_person') }}</label>
+        <label class="f"><span class="lbl">เบอร์มือถือ / Mobile</span>{{ tin('contact_mobile') }}</label>
+      </div>
+      <label class="f" style="margin-top:14px"><span class="lbl">หมายเหตุ</span>
+        <textarea name="remark" class="wiz-input" rows="3">{{ d.get('remark','') }}</textarea></label>
+    </div>
+  </section>
+
+  <div class="submit-bar" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+    <button class="btn" type="submit">บันทึก</button>
+  </div>
+</form>
+
+<form method="post" action="{{ url_for('admin_contract_ocr', cid=row['id']) }}"
+      style="text-align:center;margin-top:14px">
+  <button class="btn teal" type="submit">🔍 อ่านข้อมูลจากเอกสารอัตโนมัติ (OCR)</button>
+</form>
+
+</div>
+</body>
+</html>
