@@ -422,9 +422,7 @@ def ocr_fill_contract_info(contract_id):
             "certificate, VAT registration certificate ภ.พ.20, memorandum of "
             "association, national ID cards / passports of authorized signatories "
             "and witnesses) for a natural gas supply contract renewal.\n"
-            "Extract the following fields and return ONLY a single JSON object "
-            "(no markdown fences, no commentary) with exactly these keys: "
-            + json.dumps(CONTRACT_INFO_OCR_FIELDS) + "\n"
+            "Call the extract_customer_info tool with the fields you can find. "
             "Rules: company_name_th/company_name_en are the registered company "
             "name in Thai/English. address_cert_th/en is the registered address "
             "on the business registration certificate. address_vat_th/en is the "
@@ -446,16 +444,29 @@ def ocr_fill_contract_info(contract_id):
             content.append({"type": "image",
                             "source": {"type": "base64", "media_type": d["mimetype"], "data": b64}})
 
+    tool = {
+        "name": "extract_customer_info",
+        "description": "Record the customer/company identity fields found in the attached documents.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                field: {"type": "string",
+                        "description": "Value found in the documents, or empty string if not found with confidence"}
+                for field in CONTRACT_INFO_OCR_FIELDS
+            },
+            "required": CONTRACT_INFO_OCR_FIELDS,
+        },
+    }
+
     client = anthropic.Anthropic(api_key=api_key)
     resp = client.messages.create(
         model=OCR_MODEL, max_tokens=1024,
+        tools=[tool], tool_choice={"type": "tool", "name": "extract_customer_info"},
         messages=[{"role": "user", "content": content}])
-    raw = "".join(block.text for block in resp.content if block.type == "text").strip()
-    raw = re.sub(r"^```(?:json)?|```$", "", raw, flags=re.MULTILINE).strip()
-    try:
-        extracted = json.loads(raw)
-    except ValueError:
-        raise RuntimeError("โมเดลตอบกลับมาไม่เป็น JSON ที่อ่านได้ — ลองใหม่อีกครั้ง")
+    tool_use = next((b for b in resp.content if b.type == "tool_use"), None)
+    if tool_use is None:
+        raise RuntimeError("โมเดลไม่ได้ส่งข้อมูลกลับมา — ลองใหม่อีกครั้ง")
+    extracted = tool_use.input
 
     _row, data = _load_contract_request(contract_id)
     filled = 0
